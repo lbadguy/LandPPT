@@ -41,8 +41,8 @@ on:
 env:
   # Docker 镜像名称 - 请根据实际情况修改
   IMAGE_NAME: landppt
-  # 构建平台
-  PLATFORMS: linux/amd64
+  # 甲骨文 1 为 ARM64；保留单平台构建以缩短每次开发部署时间。
+  PLATFORMS: linux/arm64
 
 jobs:
   build:
