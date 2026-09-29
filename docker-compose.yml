@@ -31,10 +31,10 @@ x-landppt-env: &landppt-env
   VALKEY_URL: valkey://valkey:${VALKEY_PORT:-6379}
   TASK_EXECUTION_MODE: queue
   TASK_QUEUE_NAME: ${TASK_QUEUE_NAME:-default}
-  STORAGE_BACKEND: ${STORAGE_BACKEND:-s3}
+  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
   LOCAL_STORAGE_ROOT: ${LOCAL_STORAGE_ROOT:-/app/data/artifacts}
   LOCAL_STORAGE_PUBLIC_BASE_URL: ${LOCAL_STORAGE_PUBLIC_BASE_URL:-}
-  S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+  S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
   S3_REGION: ${S3_REGION:-us-east-1}
   S3_BUCKET: ${S3_BUCKET:-landppt}
   S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-landppt}
@@ -50,10 +50,6 @@ x-landppt-depends-on: &landppt-depends-on
     condition: service_healthy
   valkey:
     condition: service_healthy
-  minio:
-    condition: service_healthy
-  minio-init:
-    condition: service_completed_successfully
 
 services:
   permissions-init:
@@ -154,44 +150,6 @@ services:
       - landppt_network
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-landppt}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-landppt-minio-secret}
-    ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - landppt_network
-    restart: unless-stopped
-
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-landppt} $${MINIO_ROOT_PASSWORD:-landppt-minio-secret};
-      mc mb -p local/$${S3_BUCKET:-landppt} || true;
-      exit 0;
-      "
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-landppt}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-landppt-minio-secret}
-      S3_BUCKET: ${S3_BUCKET:-landppt}
-    networks:
-      - landppt_network
-
 volumes:
   landppt_data:
     driver: local
@@ -206,8 +164,6 @@ volumes:
   postgres_data:
     driver: local
   valkey_data:
-    driver: local
-  minio_data:
     driver: local
 
 networks:
