@@ -21,6 +21,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+async def _hide_inherited_passwords(config: Dict[str, Any], user: User, config_service: DatabaseConfigService) -> Dict[str, Any]:
+    """Keep shared provider credentials on the server while exposing user-owned keys."""
+    if user.is_admin:
+        return config
+    schema = config_service.get_config_schema(include_admin_only=True)
+    for key, settings in schema.items():
+        if settings.get("type") == "password" and key in config:
+            if not await config_service.is_user_override(user.id, key):
+                config.pop(key, None)
+    return config
+
+
 # Pydantic models
 class ConfigUpdateRequest(BaseModel):
     config: Dict[str, Any]
@@ -42,6 +54,7 @@ async def get_user_config(
         config_service = get_db_config_service()
         # Use get_all_config_for_user which filters admin-only categories for non-admins
         config = await config_service.get_all_config_for_user(user_id=user.id, is_admin=user.is_admin)
+        config = await _hide_inherited_passwords(config, user, config_service)
         return {
             "success": True,
             "config": config,
@@ -63,6 +76,7 @@ async def get_user_config_by_category(
         config_service = get_db_config_service()
         schema = config_service.get_config_schema(include_admin_only=True)
         config = await config_service.get_all_config_for_user(user_id=user.id, is_admin=user.is_admin)
+        config = await _hide_inherited_passwords(config, user, config_service)
         config = {
             key: value
             for key, value in config.items()
@@ -416,6 +430,7 @@ async def get_all_config(
 
         config["tavily_api_key_configured"] = tavily_configured
         config["tavily_uses_admin_default"] = bool(tavily_configured and (not user.is_admin) and (not user_has_override))
+        config = await _hide_inherited_passwords(config, user, config_service)
         
         return {
             "success": True,
@@ -663,6 +678,7 @@ async def get_config_by_category(
 
         config["tavily_api_key_configured"] = tavily_configured
         config["tavily_uses_admin_default"] = bool(tavily_configured and (not user.is_admin) and (not user_has_override))
+        config = await _hide_inherited_passwords(config, user, config_service)
         
         return {
             "success": True,
@@ -691,7 +707,9 @@ async def update_config_by_category(
         filtered_config = {
             key: value
             for key, value in request.config.items()
-            if key in schema and schema[key].get("category") == category
+            if key in schema
+            and schema[key].get("category") == category
+            and (user.is_admin or not schema[key].get("admin_only", False))
         }
 
         # For sensitive settings (e.g. Tavily key), admins set the system default.
