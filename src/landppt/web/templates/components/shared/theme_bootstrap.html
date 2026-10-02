@@ -1,0 +1,20 @@
+<script>
+    (() => {
+        const storageKey = 'landppt-theme-mode';
+        const validModes = new Set(['light', 'dark', 'system']);
+        const root = document.documentElement;
+        let mode = 'system';
+        try {
+            const storedMode = window.localStorage.getItem(storageKey);
+            if (validModes.has(storedMode)) mode = storedMode;
+        } catch (error) {
+            // The system preference still applies when storage is unavailable.
+        }
+        const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
+        const resolvedMode = mode === 'dark' || (mode === 'system' && prefersDark) ? 'dark' : 'light';
+        root.dataset.themeMode = mode;
+        root.dataset.resolvedTheme = resolvedMode;
+        root.classList.toggle('dark', resolvedMode === 'dark');
+        root.style.colorScheme = resolvedMode;
+    })();
+</script>

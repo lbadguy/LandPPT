@@ -4,12 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/shared/theme_bootstrap.html" %}
     <title>注册 - LandPPT</title>
     <link rel="icon" type="image/svg+xml" href="/static/images/landppt-logo.png">
     <link rel="alternate icon" href="/static/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/pages/auth/auth.css">
     <link rel="stylesheet" href="/static/css/shared/site_notice.css">
+    <link rel="stylesheet" href="/static/css/shared/theme.css?v=20261002">
 </head>
 
 <body class="auth-body" data-initial-tab="register">
@@ -245,6 +247,7 @@
             noticeContainer: 'authSiteNotice',
         });
     </script>
+    <script src="/static/js/shared/theme.js?v=20261002"></script>
     <script src="/static/js/pages/auth/auth.js?v=20260321" defer></script>
     {% if turnstile_enabled and turnstile_site_key %}
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

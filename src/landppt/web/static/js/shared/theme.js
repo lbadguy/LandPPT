@@ -11,13 +11,11 @@
     const readMode = () => {
         try {
             const storedMode = window.localStorage.getItem(storageKey);
-            if (modes.has(storedMode)) {
-                return storedMode;
-            }
+            return modes.has(storedMode) ? storedMode : 'system';
         } catch (error) {
-            // Keep the in-memory system default when storage is unavailable.
+            // Keep the in-memory mode when storage is unavailable.
+            return modes.has(root.dataset.themeMode) ? root.dataset.themeMode : 'system';
         }
-        return modes.has(root.dataset.themeMode) ? root.dataset.themeMode : 'system';
     };
 
     const prefersDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
@@ -32,7 +30,7 @@
             }
         }
 
-        const resolved = mode === 'dark' || (mode === 'system' && prefersDark) ? 'dark' : 'light';
+        const resolved = mode === 'dark' || (mode === 'system' && prefersDark()) ? 'dark' : 'light';
         root.dataset.themeMode = mode;
         root.dataset.resolvedTheme = resolved;
         root.classList.toggle('dark', resolved === 'dark');
@@ -45,7 +43,13 @@
         document.querySelectorAll('[data-theme-choice]').forEach((button) => {
             const isActive = button.dataset.themeChoice === mode;
             button.classList.toggle('is-active', isActive);
-            button.setAttribute('aria-pressed', String(isActive));
+            const check = button.querySelector('[data-theme-check]');
+            if (check) check.hidden = !isActive;
+            if (button.getAttribute('role') === 'menuitemradio') {
+                button.setAttribute('aria-checked', String(isActive));
+            } else {
+                button.setAttribute('aria-pressed', String(isActive));
+            }
         });
 
         window.dispatchEvent(new CustomEvent('landppt:themechange', {
@@ -79,6 +83,12 @@
             mediaQuery.addListener(onSystemPreferenceChange);
         }
     }
+
+    window.addEventListener('storage', (event) => {
+        if (event.key === storageKey || event.key === null) {
+            apply(readMode());
+        }
+    });
 
     window.LandPPTTheme = {
         getMode: readMode,

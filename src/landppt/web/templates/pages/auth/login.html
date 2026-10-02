@@ -5,25 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - LandPPT</title>
-    <script>
-        (() => {
-            const storageKey = 'landppt-theme-mode';
-            const validModes = new Set(['light', 'dark', 'system']);
-            const root = document.documentElement;
-            let mode = 'system';
-            try {
-                const storedMode = window.localStorage.getItem(storageKey);
-                if (validModes.has(storedMode)) mode = storedMode;
-            } catch (error) {
-                // Storage may be disabled; the selected mode still applies for this page.
-            }
-            const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
-            const resolvedMode = mode === 'dark' || (mode === 'system' && prefersDark) ? 'dark' : 'light';
-            root.dataset.themeMode = mode;
-            root.classList.toggle('dark', resolvedMode === 'dark');
-            root.style.colorScheme = resolvedMode;
-        })();
-    </script>
+    {% include "components/shared/theme_bootstrap.html" %}
     <link rel="icon" type="image/svg+xml" href="/static/images/landppt-logo.png">
     <link rel="alternate icon" href="/static/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -416,6 +398,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/shared/theme.css?v=20261002">
 </head>
 
 <body class="auth-body" data-initial-tab="{{ active_tab or 'login' }}">
@@ -728,7 +711,7 @@
             noticeContainer: 'authSiteNotice',
         });
     </script>
-    <script src="/static/js/shared/theme.js?v=20261001"></script>
+    <script src="/static/js/shared/theme.js?v=20261002"></script>
     <script src="/static/js/pages/auth/auth.js?v=20260321" defer></script>
     <script src="/static/js/pages/auth/auth.turnstile-lazy-fallback.js?v=20260214" defer></script>
 </body>
