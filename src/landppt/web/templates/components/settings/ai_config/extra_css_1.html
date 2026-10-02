@@ -1760,3 +1760,134 @@
             padding: 6px 8px !important;
             font-size: 0.86rem !important;
         }
+
+        html.dark .ai-config-page {
+            --ai-surface: #1e1f20;
+            --ai-surface-strong: #242526;
+            --ai-border: #3b3d3e;
+            --ai-contrast: #f0f1f0;
+            --ai-muted: #a6a9a7;
+            --ai-soft: #292a2b;
+            color: var(--text-primary);
+        }
+
+        html.dark .ai-config-page :is(
+            .card,
+            .config-section,
+            .config-section-header,
+            .config-section-body,
+            .param-card,
+            .toggle-row-body,
+            .parallel-showcase,
+            .model-dropdown,
+            .searchable-select-dropdown,
+            .provider-header,
+            .provider-content,
+            .sub-section
+        ) {
+            background: var(--ai-surface-strong) !important;
+            border-color: var(--ai-border) !important;
+            color: var(--text-primary) !important;
+        }
+
+        html.dark .ai-config-page .provider-accordion-item {
+            border-color: var(--ai-border) !important;
+        }
+
+        html.dark .ai-config-page .provider-header .provider-title {
+            color: var(--text-primary) !important;
+        }
+
+        html.dark .ai-config-page .provider-header .provider-chevron {
+            color: var(--text-secondary) !important;
+        }
+
+        html.dark .ai-config-page .provider-header label {
+            color: var(--text-secondary) !important;
+        }
+
+        html.dark .ai-config-page .provider-status--available {
+            background: #284637 !important;
+            color: #b7f1ce !important;
+        }
+
+        html.dark .ai-config-page .provider-status--unconfigured {
+            background: #353839 !important;
+            color: #d0d4d2 !important;
+        }
+
+        html.dark .ai-config-page :is(
+            .page-title,
+            .page-subtitle,
+            .hero-eyebrow,
+            .section-heading,
+            .subheading,
+            .config-section-title,
+            .config-section-meta,
+            .param-card-label,
+            .param-card-value,
+            .toggle-row-title,
+            .toggle-row-desc,
+            .sub-section-title,
+            .field-label,
+            .field-help,
+            .parallel-showcase-label,
+            .parallel-counter,
+            .form-group label,
+            .model-roles-table th,
+            .model-roles-table td
+        ) {
+            color: var(--text-primary) !important;
+        }
+
+        html.dark .ai-config-page :is(
+            input:not([type="checkbox"]):not([type="range"]),
+            select,
+            textarea,
+            .model-input,
+            .model-select,
+            .searchable-select-input
+        ) {
+            background: #242526 !important;
+            border-color: var(--ai-border) !important;
+            color: var(--text-primary) !important;
+        }
+
+        html.dark .ai-config-page :is(input, select, textarea, button):focus-visible,
+        html.dark .ai-config-page :is(input, select, textarea):focus {
+            outline-color: #9da9a0;
+            border-color: #a9adab !important;
+            box-shadow: 0 0 0 3px rgba(202, 207, 203, 0.16) !important;
+        }
+
+        html.dark .ai-config-page .tab-btn {
+            background: #303233;
+            border-color: #4a4d4e;
+            color: var(--text-secondary);
+        }
+
+        html.dark .ai-config-page .tab-btn.active,
+        html.dark .ai-config-page .btn-save-primary,
+        html.dark .ai-config-page .btn-primary {
+            background: #edf1ed !important;
+            border-color: #edf1ed !important;
+            color: #171b18 !important;
+        }
+
+        html.dark .ai-config-page .searchable-select-option:hover,
+        html.dark .ai-config-page .tab-btn:hover,
+        html.dark .ai-config-page .toggle-row:hover {
+            background: #303233 !important;
+            color: var(--ink-strong) !important;
+        }
+
+        html.dark .ai-config-page .info-card--warning {
+            background: #352e20 !important;
+            border-color: #625338 !important;
+            color: #e8d29c !important;
+        }
+
+        html.dark .ai-config-page .info-card--accent {
+            background: #282a2b !important;
+            border-color: #3b3d3e !important;
+        }

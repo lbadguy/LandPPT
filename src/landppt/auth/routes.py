@@ -134,22 +134,6 @@ async def _registration_template_ctx() -> dict:
     }
 
 
-def _forgot_password_template_response(
-    request: Request,
-    *,
-    email: str = "",
-    error: Optional[str] = None,
-    success: Optional[str] = None,
-):
-    return templates.TemplateResponse("pages/auth/forgot_password.html", {
-        "request": request,
-        "email": email,
-        "error": error,
-        "success": success,
-        **_turnstile_template_ctx(),
-    })
-
-
 @router.get("/auth/login", response_class=HTMLResponse)
 async def login_page(
     request: Request,
@@ -531,7 +515,7 @@ async def api_delete_user_api_key(
 
 class SendCodeRequest(BaseModel):
     email: str
-    code_type: str  # 'register' or 'reset'
+    code_type: str  # 'register'
     invite_code: Optional[str] = None
     turnstile_token: Optional[str] = None
 
@@ -684,83 +668,6 @@ async def register(
         return await render_register_error(f"注册失败: {str(e)}")
 
 
-@router.get("/auth/forgot-password", response_class=HTMLResponse)
-async def forgot_password_page(
-    request: Request,
-    error: str = None,
-    success: str = None
-):
-    """Forgot password page"""
-    return _forgot_password_template_response(
-        request,
-        error=error,
-        success=success,
-    )
-
-
-@router.post("/auth/reset-password")
-async def reset_password(
-    request: Request,
-    email: str = Form(...),
-    code: str = Form(...),
-    new_password: str = Form(...),
-    confirm_password: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    """Handle password reset form submission"""
-    from ..services.email_service import verify_code
-
-    if new_password != confirm_password:
-        return _forgot_password_template_response(
-            request,
-            email=email,
-            error="两次密码输入不一致",
-        )
-
-    if len(new_password) < 6:
-        return _forgot_password_template_response(
-            request,
-            email=email,
-            error="密码长度至少6位",
-        )
-
-    # Verify email code
-    success, message = await verify_code(email, code, 'reset')
-    if not success:
-        return _forgot_password_template_response(
-            request,
-            email=email,
-            error=message,
-        )
-
-    # Find user by email
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        return _forgot_password_template_response(
-            request,
-            email=email,
-            error="该邮箱未注册",
-        )
-
-    try:
-        # Update password
-        user.set_password(new_password)
-        db.commit()
-        await get_auth_service().invalidate_user_sessions_cache(user.id)
-        logger.info(f"Password reset for user: {user.username}")
-        return RedirectResponse(
-            url="/auth/login?success=密码重置成功，请登录",
-            status_code=302
-        )
-    except Exception as e:
-        logger.error(f"Password reset error: {e}")
-        return _forgot_password_template_response(
-            request,
-            email=email,
-            error=f"密码重置失败: {str(e)}",
-        )
-
-
 @router.post("/auth/api/send-code")
 async def api_send_code(request: Request, request_data: SendCodeRequest, db: Session = Depends(get_db)):
     """API endpoint to send verification code"""
@@ -770,7 +677,7 @@ async def api_send_code(request: Request, request_data: SendCodeRequest, db: Ses
     email = request_data.email.strip().lower()
     code_type = request_data.code_type
     
-    if code_type not in ['register', 'reset']:
+    if code_type != 'register':
         return {"success": False, "message": "无效的验证码类型"}
     
     # For registration, check if email already exists
@@ -804,16 +711,6 @@ async def api_send_code(request: Request, request_data: SendCodeRequest, db: Ses
         existing = db.query(User).filter(User.email == email).first()
         if existing:
             return {"success": False, "message": "该邮箱已被注册"}
-    
-    # For password reset, check if email exists
-    if code_type == 'reset':
-        if is_turnstile_active():
-            ok, msg = await verify_turnstile(request_data.turnstile_token, _get_client_ip(request))
-            if not ok:
-                return {"success": False, "message": msg}
-        existing = db.query(User).filter(User.email == email).first()
-        if not existing:
-            return {"success": False, "message": "该邮箱未注册"}
     
     # Send verification email
     success, message = await send_verification_email(email, code_type)

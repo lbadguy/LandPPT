@@ -5,6 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - LandPPT</title>
+    <script>
+        (() => {
+            const storageKey = 'landppt-theme-mode';
+            const validModes = new Set(['light', 'dark', 'system']);
+            const root = document.documentElement;
+            let mode = 'system';
+            try {
+                const storedMode = window.localStorage.getItem(storageKey);
+                if (validModes.has(storedMode)) mode = storedMode;
+            } catch (error) {
+                // Storage may be disabled; the selected mode still applies for this page.
+            }
+            const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
+            const resolvedMode = mode === 'dark' || (mode === 'system' && prefersDark) ? 'dark' : 'light';
+            root.dataset.themeMode = mode;
+            root.classList.toggle('dark', resolvedMode === 'dark');
+            root.style.colorScheme = resolvedMode;
+        })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/static/images/landppt-logo.png">
     <link rel="alternate icon" href="/static/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -228,7 +247,7 @@
         }
 
         /* 减少动态效果偏好：停用背景动画 */
-        @media (prefers-reduced-motion: reduce) {
+    @media (prefers-reduced-motion: reduce) {
             .bw-grid, .bw-scanner, .bw-slide, .bw-data {
                 animation: none !important;
             }
@@ -238,12 +257,185 @@
             .bw-visual-bg {
                 transform: scale(0.9);
                 transition: none;
+        }
+    }
+    </style>
+    <style>
+        html.dark {
+            color-scheme: dark;
+            --ink: #e3e4e3;
+            --ink-2: #c4c6c5;
+            --muted: #a6a8a7;
+            --muted-2: #898c8a;
+            --paper: #1e1f20;
+            --paper-2: #141516;
+            --border: rgba(226, 228, 226, 0.16);
+            --border-strong: #777a78;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+            --shadow-soft: 0 18px 46px rgba(0, 0, 0, 0.32);
+            --danger-bg: #3c2528;
+            --success-bg: #1d3b2a;
+        }
+
+        html.dark body.auth-body,
+        html.dark .form-panel {
+            background: var(--paper-2);
+            color: var(--ink);
+        }
+
+        html.dark .auth-tabs,
+        html.dark .control,
+        html.dark .alert,
+        html.dark .locked {
+            background: var(--paper);
+            border-color: var(--border);
+            color: var(--ink);
+        }
+
+        html.dark .auth-tabs__indicator {
+            background: #eceeec;
+            border-color: #eceeec;
+        }
+
+        html.dark .auth-tabs button[aria-selected="true"] {
+            color: #171819;
+        }
+
+        html.dark .control input {
+            color: var(--ink);
+        }
+
+        html.dark .control:focus-within {
+            box-shadow: 0 0 0 4px rgba(220, 224, 221, 0.16);
+        }
+
+        html.dark .toggle:hover,
+        html.dark .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        html.dark .btn-primary {
+            background: #eceeec;
+            border-color: #eceeec;
+            color: #171819;
+        }
+
+        html.dark .btn-primary:hover {
+            background: #d2d5d3;
+        }
+
+        html.dark .auth-footer {
+            border-top-color: var(--border);
+        }
+
+        .login-theme-menu {
+            position: fixed;
+            top: 16px;
+            right: 18px;
+            z-index: 1100;
+            color: var(--ink);
+        }
+
+        .login-theme-menu > summary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--paper);
+            color: var(--ink);
+            list-style: none;
+            cursor: pointer;
+        }
+
+        .login-theme-menu > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .login-theme-menu > summary:focus-visible,
+        .login-theme-menu__option:focus-visible {
+            outline: 3px solid rgba(128, 134, 130, 0.42);
+            outline-offset: 2px;
+        }
+
+        .login-theme-menu__list {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            display: grid;
+            gap: 3px;
+            min-width: 150px;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--paper);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .login-theme-menu__option {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-height: 38px;
+            padding: 8px 10px;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            background: transparent;
+            color: var(--ink);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .login-theme-menu__option:hover,
+        .login-theme-menu__option.is-active {
+            border-color: var(--border);
+            background: var(--paper-2);
+        }
+
+        .login-theme-menu__option i:last-child {
+            margin-left: auto;
+        }
+
+        @media (max-width: 620px) {
+            .login-theme-menu {
+                top: 10px;
+                right: 10px;
+            }
+
+            .login-theme-menu > summary {
+                width: 40px;
+                padding: 8px;
+            }
+
+            .login-theme-menu > summary span {
+                display: none;
             }
         }
     </style>
 </head>
 
 <body class="auth-body" data-initial-tab="{{ active_tab or 'login' }}">
+    <details class="login-theme-menu">
+        <summary title="主题模式" aria-label="主题模式">
+            <i class="fas fa-circle-half-stroke" aria-hidden="true"></i>
+            <span data-theme-current>系统</span>
+        </summary>
+        <div class="login-theme-menu__list" role="group" aria-label="主题模式">
+            <button type="button" class="login-theme-menu__option" data-theme-choice="light" aria-pressed="false">
+                <i class="fas fa-sun" aria-hidden="true"></i><span>浅色</span><i class="fas fa-check" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="login-theme-menu__option" data-theme-choice="dark" aria-pressed="false">
+                <i class="fas fa-moon" aria-hidden="true"></i><span>深色</span><i class="fas fa-check" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="login-theme-menu__option" data-theme-choice="system" aria-pressed="false">
+                <i class="fas fa-desktop" aria-hidden="true"></i><span>系统</span><i class="fas fa-check" aria-hidden="true"></i>
+            </button>
+        </div>
+    </details>
     <div class="auth-bg" aria-hidden="true">
         <div class="auth-bg__grid"></div>
         <div class="auth-bg__noise"></div>
@@ -389,7 +581,6 @@
                         {% endif %}
 
                         <div class="links">
-                            <a href="/auth/forgot-password">忘记密码？</a>
                             <a href="/auth/login?tab=register">没有账号，去注册</a>
                         </div>
                     </div>
@@ -537,6 +728,7 @@
             noticeContainer: 'authSiteNotice',
         });
     </script>
+    <script src="/static/js/shared/theme.js?v=20261001"></script>
     <script src="/static/js/pages/auth/auth.js?v=20260321" defer></script>
     <script src="/static/js/pages/auth/auth.turnstile-lazy-fallback.js?v=20260214" defer></script>
 </body>

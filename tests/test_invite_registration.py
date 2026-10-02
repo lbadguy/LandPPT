@@ -276,47 +276,7 @@ def test_api_send_code_register_sends_email_after_valid_invite_check(monkeypatch
         db.close()
 
 
-def test_api_send_code_reset_rejects_when_turnstile_verification_fails(monkeypatch):
-    from landppt.services import email_service, turnstile_service
-
-    auth_routes = _import_auth_routes(monkeypatch)
-
-    db = _create_db()
-    sent = []
-
-    async def fake_send_verification_email(email, code_type):
-        sent.append((email, code_type))
-        return True, "sent"
-
-    async def fake_verify_turnstile(token, remote_ip):
-        return False, "请先完成人机验证"
-
-    try:
-        _create_user(db, "reset_user", "reset@example.com")
-
-        monkeypatch.setattr(email_service, "send_verification_email", fake_send_verification_email)
-        monkeypatch.setattr(turnstile_service, "is_turnstile_active", lambda: True)
-        monkeypatch.setattr(turnstile_service, "verify_turnstile", fake_verify_turnstile)
-
-        result = asyncio.run(
-            auth_routes.api_send_code(
-                _make_request(),
-                auth_routes.SendCodeRequest(
-                    email="reset@example.com",
-                    code_type="reset",
-                ),
-                db,
-            )
-        )
-
-        assert result["success"] is False
-        assert "人机验证" in result["message"]
-        assert sent == []
-    finally:
-        db.close()
-
-
-def test_api_send_code_reset_sends_email_after_turnstile_check(monkeypatch):
+def test_api_send_code_rejects_password_reset_codes(monkeypatch):
     from landppt.services import email_service, turnstile_service
 
     auth_routes = _import_auth_routes(monkeypatch)
@@ -334,8 +294,6 @@ def test_api_send_code_reset_sends_email_after_turnstile_check(monkeypatch):
         return True, "ok"
 
     try:
-        _create_user(db, "reset_user_ok", "reset-ok@example.com")
-
         monkeypatch.setattr(email_service, "send_verification_email", fake_send_verification_email)
         monkeypatch.setattr(turnstile_service, "is_turnstile_active", lambda: True)
         monkeypatch.setattr(turnstile_service, "verify_turnstile", fake_verify_turnstile)
@@ -344,17 +302,18 @@ def test_api_send_code_reset_sends_email_after_turnstile_check(monkeypatch):
             auth_routes.api_send_code(
                 _make_request(),
                 auth_routes.SendCodeRequest(
-                    email="reset-ok@example.com",
+                    email="reset@example.com",
                     code_type="reset",
-                    turnstile_token="turnstile-token-ok",
+                    turnstile_token="turnstile-token",
                 ),
                 db,
             )
         )
 
-        assert result["success"] is True
-        assert verify_calls == [("turnstile-token-ok", "127.0.0.1")]
-        assert sent == [("reset-ok@example.com", "reset")]
+        assert result["success"] is False
+        assert result["message"] == "无效的验证码类型"
+        assert verify_calls == []
+        assert sent == []
     finally:
         db.close()
 

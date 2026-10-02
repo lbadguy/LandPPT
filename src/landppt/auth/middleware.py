@@ -74,8 +74,6 @@ class AuthMiddleware:
             "/auth/linuxdo/login",
             "/auth/linuxdo/callback",
             "/auth/register",
-            "/auth/forgot-password",
-            "/auth/reset-password",
             "/auth/api/send-code",
             "/sponsors",
             "/api/community/public-settings",

@@ -608,6 +608,70 @@
         align-items: stretch;
     }
 }
+html.dark .projects-header,
+html.dark .projects-toolbar,
+html.dark .projects-table,
+html.dark .empty-state,
+html.dark .pagination-bar,
+html.dark .modal-surface {
+    background: var(--surface);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+html.dark .projects-table-header,
+html.dark .project-list-item:hover,
+html.dark .filter-result-hint,
+html.dark .empty-state-icon,
+html.dark .project-title-icon {
+    background: var(--surface-subtle);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+html.dark .project-list-item {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+html.dark .status-filter-select,
+html.dark .modal-input {
+    background-color: var(--surface);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+html.dark .status-filter-select:focus,
+html.dark .modal-input:focus {
+    border-color: #4abf86;
+    box-shadow: 0 0 0 3px rgba(74, 191, 134, 0.18);
+}
+
+html.dark .action-btn:not(.action-btn--danger) {
+    color: var(--text-primary);
+}
+
+html.dark .action-btn:not(.action-btn--danger):hover,
+html.dark .action-btn--primary:hover {
+    background: #26312a;
+    border-color: var(--border-color);
+    color: var(--ink-strong);
+}
+
+html.dark .project-progress-track {
+    background: #354239;
+}
+
+html.dark .project-progress-fill {
+    background: #c5cbc7;
+}
+
+html.dark .spinner {
+    border-color: #354239;
+    border-top-color: #d3d7d4;
+}
+
 </style>
 {% endblock %}
 

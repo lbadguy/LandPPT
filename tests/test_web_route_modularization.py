@@ -292,10 +292,12 @@ def test_frontend_template_grouping_is_applied_to_route_handlers():
     for marker in [
         'pages/auth/login.html',
         'pages/auth/register.html',
-        'pages/auth/forgot_password.html',
         'pages/account/profile.html',
     ]:
         assert marker in auth_text
+
+    assert '/auth/forgot-password' not in auth_text
+    assert '/auth/reset-password' not in auth_text
 
     for marker in [
         'pages/admin/users.html',
