@@ -1,15 +1,4 @@
-<!-- 页面头部美化 -->
-
-<div class="todo-hero-band"
-    style="background: var(--glass-bg); color: var(--text-primary); padding: 40px 0; text-align: center; position: relative; overflow: hidden; border-bottom: 1px solid var(--glass-border);">
-    <div style="position: relative; z-index: 1;">
-        <h2 style="font-size: 2em; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em;">{{ todo_board.title
-            }}</h2>
-        <p style="opacity: 0.9; font-size: 1em;">项目ID: <code
-                style="background: var(--surface); padding: 4px 10px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; border: 1px solid var(--border-color);">{{ todo_board.task_id }}</code>
-        </p>
-    </div>
-</div>
+<div class="todo-board-page">
 
 <!-- 无人值守任务监控面板（无任务时保持隐藏） -->
 <div id="unattendedMonitor" style="max-width: 1200px; margin: 24px auto 0;" hidden></div>
@@ -247,58 +236,53 @@
             <input type="hidden" id="render_mode" name="render_mode" value="{{ 'svg' if page_render_mode == 'svg' else 'html' }}">
         </div>
 
-        <!-- 提交 -->
-        <div class="req-submit-area">
-            <button type="submit" id="confirm-requirements-btn" class="btn btn-primary requirements-submit-btn">
-                开始生成大纲
-            </button>
-        </div>
     </form>
 </div>
 {% endif %}
 
-<!-- Project Actions -->
-<div style="text-align: center; margin-bottom: 40px;">
-    <div
-        style="display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; background: var(--surface); padding: 20px; border-radius: 16px; box-shadow: var(--shadow-soft);">
-        <a href="/projects/{{ todo_board.task_id }}"
-            style="background: var(--surface-contrast); color: var(--surface); text-decoration: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; font-size: 0.9em;"
-            onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-            查看项目详情
-        </a>
-
-        {% set has_slides = project and project.slides_data and project.slides_data|length > 0 %}
-        {# Rendered in both states so the row keeps its shape across the reload that
-           follows an unattended run, instead of silently growing two buttons. #}
-        {% if has_slides %}
-        <a href="/projects/{{ todo_board.task_id }}/preview" target="_blank"
-            style="background: #1f2a37; color: var(--surface); text-decoration: none; padding: 10px 20px; border-radius: 10px; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; font-size: 0.9em; font-weight: 600;"
-            onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-            预览 PPT
-        </a>
-        <a href="/projects/{{ todo_board.task_id }}/edit" target="_blank"
-            style="background: #3f3f3f; color: var(--surface); text-decoration: none; padding: 10px 20px; border-radius: 10px; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; font-size: 0.9em; font-weight: 600;"
-            onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-            编辑 PPT
-        </a>
-        {% else %}
-        <span title="PPT 生成后可用" aria-disabled="true"
-            style="background: var(--surface-subtle); color: var(--text-muted); padding: 10px 20px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: not-allowed;">
-            预览 PPT
-        </span>
-        <span title="PPT 生成后可用" aria-disabled="true"
-            style="background: var(--surface-subtle); color: var(--text-muted); padding: 10px 20px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: not-allowed;">
-            编辑 PPT
-        </span>
-        {% endif %}
-
-        <a href="/projects"
-            style="background: #2d2d2d; color: var(--surface); text-decoration: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; font-size: 0.9em;"
-            onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">
-            返回项目列表
-        </a>
+{% set has_slides = project and project.slides_data and project.slides_data|length > 0 %}
+{% set has_outline = project and project.outline and project.outline.get('slides') %}
+<footer class="todo-action-dock" id="todoActionDock" aria-label="项目操作">
+    <div class="todo-action-dock__inner">
+        <div class="todo-action-dock__primary" {% if not (not requirements_stage or requirements_stage.status == 'pending') and not has_outline %}hidden{% endif %}>
+            {% if not requirements_stage or requirements_stage.status == 'pending' %}
+            <button type="submit" form="requirements-form" id="confirm-requirements-btn"
+                class="todo-action-button todo-action-button--primary requirements-submit-btn">
+                <i class="fas fa-list-check" aria-hidden="true"></i><span>开始生成大纲</span>
+            </button>
+            {% endif %}
+            <button type="button" id="start-ppt-button" onclick="startPPTGenerationFromOutline()"
+                class="todo-action-button todo-action-button--ppt" {% if not has_outline %}hidden{% endif %}>
+                <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i><span>开始生成 PPT</span>
+            </button>
+        </div>
+        <nav class="todo-action-dock__links" aria-label="项目快捷入口">
+            <a class="todo-action-button" href="/projects/{{ todo_board.task_id }}" aria-label="查看项目详情" title="查看项目详情">
+                <i class="fas fa-folder-open" aria-hidden="true"></i><span>详情</span>
+            </a>
+            {% if has_slides %}
+            <a class="todo-action-button" href="/projects/{{ todo_board.task_id }}/preview" target="_blank" rel="noopener noreferrer"
+                aria-label="预览 PPT" title="预览 PPT">
+                <i class="fas fa-eye" aria-hidden="true"></i><span>预览</span>
+            </a>
+            <a class="todo-action-button" href="/projects/{{ todo_board.task_id }}/edit" target="_blank" rel="noopener noreferrer"
+                aria-label="编辑 PPT" title="编辑 PPT">
+                <i class="fas fa-pen-to-square" aria-hidden="true"></i><span>编辑</span>
+            </a>
+            {% else %}
+            <span class="todo-action-button is-disabled" aria-disabled="true" title="PPT 生成后可用">
+                <i class="fas fa-eye" aria-hidden="true"></i><span>预览</span>
+            </span>
+            <span class="todo-action-button is-disabled" aria-disabled="true" title="PPT 生成后可用">
+                <i class="fas fa-pen-to-square" aria-hidden="true"></i><span>编辑</span>
+            </span>
+            {% endif %}
+            <a class="todo-action-button" href="/projects" aria-label="返回项目列表" title="返回项目列表">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i><span>列表</span>
+            </a>
+        </nav>
     </div>
-</div>
+</footer>
 
 <!-- Task execution is now handled directly in the stage cards -->
 
@@ -363,3 +347,4 @@
     }
 
 </style>
+</div>

@@ -16,6 +16,10 @@
         @import url('https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
         :root {
+            color-scheme: light;
+            --action-primary-background: #111111;
+            --action-primary-foreground: #ffffff;
+            --action-primary-hover: #2d2d2d;
             --ink-strong: #0f172a;
             --ink: #111111;
             --ink-muted: #4b5563;
@@ -55,6 +59,9 @@
 
         html.dark {
             color-scheme: dark;
+            --action-primary-background: #e1e3e1;
+            --action-primary-foreground: #141516;
+            --action-primary-hover: #ffffff;
             --ink-strong: #f2f3f2;
             --ink: #e1e3e1;
             --ink-muted: #c0c3c1;
@@ -483,6 +490,18 @@
             background: color-mix(in srgb, var(--surface) 94%, transparent);
             border-bottom: 1px solid var(--border-color);
             backdrop-filter: blur(18px);
+            box-shadow: 0 0 0 transparent;
+            transition: box-shadow 0.2s ease, background-color 0.2s ease;
+            animation: app-topbar-enter 0.32s ease-out both;
+        }
+
+        .app-topbar.is-scrolled {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        @keyframes app-topbar-enter {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .app-topbar__inner {
@@ -529,6 +548,33 @@
             color: var(--text-secondary);
             font-size: 0.68rem;
             font-weight: 500;
+        }
+
+        .app-topbar__context {
+            display: flex;
+            align-items: center;
+            flex: 1 1 auto;
+            gap: 10px;
+            min-width: 0;
+            padding-left: 16px;
+            border-left: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .app-topbar__context i {
+            flex: 0 0 auto;
+        }
+
+        .app-topbar__context-title {
+            min-width: 0;
+            margin: 0;
+            overflow: hidden;
+            color: var(--text-primary);
+            font-size: 0.92rem;
+            font-weight: 650;
+            line-height: 1.25;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .app-menu-toggle,
@@ -973,7 +1019,17 @@
             }
 
             .app-topbar__actions {
+                flex: 0 0 auto;
                 gap: 4px;
+            }
+
+            .app-topbar__context {
+                gap: 7px;
+                padding-left: 9px;
+            }
+
+            .app-topbar__context-title {
+                font-size: 0.86rem;
             }
 
             .app-topbar__summary,
@@ -995,6 +1051,26 @@
             .app-footer {
                 align-items: flex-start;
                 text-align: center;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .app-topbar__inner {
+                gap: 7px;
+                padding-right: 8px;
+                padding-left: 8px;
+            }
+
+            .app-topbar__context {
+                gap: 5px;
+                padding-left: 6px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .app-topbar {
+                animation: none;
+                transition: none;
             }
         }
     </style>
@@ -1021,6 +1097,8 @@
                         <small>LC7c 魔改自用版</small>
                     </span>
                 </a>
+
+                {% block app_context %}{% endblock %}
 
                 <div class="app-topbar__actions">
                     <details class="app-theme-menu" name="app-topbar-popover">
@@ -1161,6 +1239,7 @@
         const appSidebar = document.getElementById('appSidebar');
         const appTopbar = document.querySelector('.app-topbar');
         const appMain = document.querySelector('.app-main');
+        const syncTopbarScrolledState = () => appTopbar?.classList.toggle('is-scrolled', window.scrollY > 4);
         const appSidebarBreakpoint = window.matchMedia('(max-width: 960px)');
         const topbarMenus = Array.from(document.querySelectorAll('.app-topbar details[name="app-topbar-popover"]'));
         let notificationCenter = null;
@@ -1169,6 +1248,9 @@
         let lockedScrollY = 0;
         let scrollLockStyles = null;
         let backgroundInertState = null;
+
+        syncTopbarScrolledState();
+        window.addEventListener('scroll', syncTopbarScrolledState, { passive: true });
 
         const setBackgroundInert = (inert) => {
             const regions = [appTopbar, appMain].filter(Boolean);

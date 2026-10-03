@@ -1233,33 +1233,34 @@
         if (!outlineSection) {
             outlineSection = document.createElement('div');
             outlineSection.id = 'outline-section';
-            outlineSection.style.cssText = 'max-width: 1200px; margin: 20px auto; background: white; border-radius: 15px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);';
+            outlineSection.className = 'todo-board-outline';
+            outlineSection.style.cssText = 'max-width: 1200px; margin: 20px auto; border-radius: 8px; padding: 24px; box-shadow: var(--shadow-soft);';
 
             outlineSection.innerHTML = `
             <div style="text-align: center; margin-bottom: 30px;">
-                <h3 style="color: #111; margin-bottom: 10px;">
+                <h3 class="todo-board-outline__heading" style="margin-bottom: 10px;">
                     <i class="fas fa-brain"></i> PPT 大纲生成
                 </h3>
-                <p style="color: #555;">AI正在为您生成专业的PPT大纲，您可以实时查看并编辑</p>
+                <p class="todo-board-outline__description">AI正在为您生成专业的PPT大纲，您可以实时查看并编辑</p>
             </div>
 
-            <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; border: 2px solid #e9ecef;">
+            <div class="todo-board-outline__panel" style="border-radius: 8px; padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h5 style="color: #111; margin: 0;">
+                    <h5 class="todo-board-outline__heading" style="margin: 0;">
                         <i class="fas fa-list-alt"></i> 大纲内容
-                        <span id="outline-status" style="color: #111; font-size: 0.8em; margin-left: 10px; display: none;">
+                        <span id="outline-status" class="todo-board-outline__heading" style="font-size: 0.8em; margin-left: 10px; display: none;">
                         </span>
                     </h5>
 
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <!-- View Toggle Buttons - Always show -->
-                        <div style="display: flex; background: #f0f0f0; border-radius: 5px; padding: 2px; gap: 4px;">
+                        <div class="todo-board-outline__view-switch" style="display: flex; border-radius: 5px; padding: 2px; gap: 4px;">
                             <button id="json-view-btn-new" onclick="switchOutlineViewNew('json')"
-                                    style="background: #fff; color: #111; border: 1px solid #111; padding: 5px 10px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: all 0.3s ease;">
+                                    class="todo-board-outline__view-button" type="button">
                                 <i class="fas fa-code"></i> JSON
                             </button>
                             <button id="outline-view-btn-new" onclick="switchOutlineViewNew('outline')"
-                                    style="background: #111; color: #fff; border: 1px solid #111; padding: 5px 10px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: all 0.3s ease;">
+                                    class="todo-board-outline__view-button is-active" type="button">
                                 <i class="fas fa-list-ul"></i> 大纲视图
                             </button>
                         </div>
@@ -2491,22 +2492,23 @@
 
             // 创建弹窗
             const modal = document.createElement('div');
+            modal.className = 'todo-board-modal__content todo-board-modal__requirements';
             modal.style.cssText = `
-            background: #fff;
+            background: var(--surface);
             border-radius: 12px;
             padding: 24px;
             max-width: 500px;
             width: 90%;
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-            border: 1px solid #111;
+            border: 1px solid var(--border-color);
         `;
 
             modal.innerHTML = `
-            <h4 style="margin-top: 0; margin-bottom: 16px; color: #111;">
-                <i class="fas fa-magic" style="color: #111; margin-right: 8px;"></i>
+            <h4 style="margin-top: 0; margin-bottom: 16px;">
+                <i class="fas fa-magic" style="margin-right: 8px;"></i>
                 重新生成大纲
             </h4>
-            <p style="margin-bottom: 16px; color: #555; font-size: 14px;">
+            <p class="text-secondary" style="margin-bottom: 16px; font-size: 14px;">
                 您可以输入额外的自定义需求，或者直接点击“生成”使用原有设置。
             </p>
             <textarea
@@ -2516,14 +2518,14 @@
                     width: 100%;
                     height: 120px;
                     padding: 12px;
-                    border: 1px solid #d9d9d9;
+                    border: 1px solid var(--border-color);
                     border-radius: 6px;
                     font-size: 14px;
                     resize: vertical;
                     font-family: inherit;
                     box-sizing: border-box;
-                    color: #111;
-                    background: #fff;
+                    color: var(--text-primary);
+                    background: var(--surface);
                 "
             ></textarea>
             <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
@@ -2531,10 +2533,10 @@
                     id="modal-cancel-btn"
                     style="
                         padding: 10px 20px;
-                        border: 1px solid #111;
+                        border: 1px solid var(--border-color);
                         border-radius: 6px;
-                        background: #fff;
-                        color: #111;
+                        background: var(--surface);
+                        color: var(--text-primary);
                         cursor: pointer;
                         font-size: 14px;
                     "
@@ -2545,10 +2547,10 @@
                     id="modal-confirm-btn"
                     style="
                         padding: 10px 20px;
-                        border: 1px solid #111;
+                        border: 1px solid var(--action-primary-background);
                         border-radius: 6px;
-                        background: #111;
-                        color: #fff;
+                        background: var(--action-primary-background);
+                        color: var(--action-primary-foreground);
                         cursor: pointer;
                         font-size: 14px;
                     "
@@ -2871,38 +2873,21 @@
 
     // Show start PPT generation button
     function showStartPPTButton() {
-        // Check if button already exists
-        let startPPTButton = document.getElementById('start-ppt-button');
-
-        if (!startPPTButton) {
-            // Create start PPT button only if it doesn't exist
-            const outlineSection = document.getElementById('outline-section');
-            if (outlineSection) {
-                startPPTButton = document.createElement('div');
-                startPPTButton.id = 'start-ppt-button';
-                startPPTButton.style.cssText = 'text-align: center; margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 10px;';
-
-                startPPTButton.innerHTML = `
-                <button onclick="startPPTGenerationFromOutline()" class="btn btn-lg" style="padding: 15px 30px; font-size: 18px; background: #111; color: #fff;">
-                    开始生成PPT
-                </button>
-            `;
-
-                // Insert after outline section
-                outlineSection.parentNode.insertBefore(startPPTButton, outlineSection.nextSibling);
-            }
-        }
-
-        if (startPPTButton) {
-            startPPTButton.style.display = 'block';
-        }
+        const startPPTButton = document.getElementById('start-ppt-button');
+        if (!startPPTButton) return;
+        startPPTButton.hidden = false;
+        const actionSlot = startPPTButton.closest('.todo-action-dock__primary');
+        if (actionSlot) actionSlot.hidden = false;
     }
 
     // Hide start PPT generation button
     function hideStartPPTButton() {
         const startPPTButton = document.getElementById('start-ppt-button');
         if (startPPTButton) {
-            startPPTButton.style.display = 'none';
+            startPPTButton.hidden = true;
+            const actionSlot = startPPTButton.closest('.todo-action-dock__primary');
+            const requirementsButton = actionSlot?.querySelector('#confirm-requirements-btn');
+            if (actionSlot) actionSlot.hidden = !requirementsButton;
         }
     }
 
@@ -3665,14 +3650,8 @@
             if (outlineView) outlineView.style.display = 'none';
 
             // 更新按钮样式
-            if (jsonBtn) {
-                jsonBtn.style.background = '#111111';
-                jsonBtn.style.color = 'white';
-            }
-            if (outlineBtn) {
-                outlineBtn.style.background = 'transparent';
-                outlineBtn.style.color = '#6c757d';
-            }
+            jsonBtn?.classList.add('is-active');
+            outlineBtn?.classList.remove('is-active');
 
             currentView = 'json';
         } else if (viewType === 'outline') {
@@ -3681,14 +3660,8 @@
             if (outlineView) outlineView.style.display = 'block';
 
             // 更新按钮样式
-            if (outlineBtn) {
-                outlineBtn.style.background = '#111111';
-                outlineBtn.style.color = 'white';
-            }
-            if (jsonBtn) {
-                jsonBtn.style.background = 'transparent';
-                jsonBtn.style.color = '#6c757d';
-            }
+            outlineBtn?.classList.add('is-active');
+            jsonBtn?.classList.remove('is-active');
 
             currentView = 'outline';
 
@@ -3789,11 +3762,10 @@
 
         outlineData.slides.forEach((slide, index) => {
             const slideCard = document.createElement('div');
+            slideCard.className = 'todo-board-outline__compact-card';
             slideCard.style.cssText = `
-            padding: 15px; background: #f8f9fa; border-radius: 8px;
-            border-left: 4px solid #6c757d; transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative;
-            cursor: pointer; color: #333;
+            padding: 15px; transition: all 0.3s ease;
+            position: relative; cursor: pointer;
         `;
 
             slideCard.onmouseover = function () {
@@ -3811,15 +3783,15 @@
 
             slideCard.innerHTML = `
             <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                <span style="background: #111; color: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: bold; margin-right: 10px;">
+                <span class="slide-number" style="margin-right: 10px;">
                     ${escapeHtml(slide.page_number || index + 1)}
                 </span>
-                <strong style="color: #111; font-size: 0.9em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
+                <strong class="todo-board-outline__card-title" style="font-size: 0.9em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
             </div>
-            ${slide.subtitle ? `<p style="color: #555; font-size: 0.8em; margin: 5px 0; font-style: italic;">${escapeHtml(slide.subtitle)}</p>` : ''}
-            <div style="color: #444; font-size: 0.8em; line-height: 1.4;">
-                ${firstPoint ? escapeHtml(typeof firstPoint === 'string' ? firstPoint.substring(0, 80) + (firstPoint.length > 80 ? '...' : '') : JSON.stringify(firstPoint).substring(0, 80) + '...') : '<span style="color: #888;">暂无内容</span>'}
-                ${remainingCount > 0 ? `<br><span style="color: #888;">+${remainingCount} 个要点</span>` : ''}
+            ${slide.subtitle ? `<p class="todo-board-outline__card-subtitle" style="font-size: 0.8em; margin: 5px 0; font-style: italic;">${escapeHtml(slide.subtitle)}</p>` : ''}
+            <div class="todo-board-outline__card-content" style="font-size: 0.8em; line-height: 1.4;">
+                ${firstPoint ? escapeHtml(typeof firstPoint === 'string' ? firstPoint.substring(0, 80) + (firstPoint.length > 80 ? '...' : '') : JSON.stringify(firstPoint).substring(0, 80) + '...') : '<span class="todo-board-outline__muted">暂无内容</span>'}
+                ${remainingCount > 0 ? `<br><span class="todo-board-outline__muted">+${remainingCount} 个要点</span>` : ''}
             </div>
         `;
 
@@ -3837,9 +3809,9 @@
 
         outlineData.slides.forEach((slide, index) => {
             const slideDiv = document.createElement('div');
+            slideDiv.className = 'todo-board-outline__detailed-card';
             slideDiv.style.cssText = `
-            padding: 20px; margin-bottom: 15px; background: #f8f9fa;
-            border-radius: 10px; border-left: 4px solid #111; position: relative;
+            padding: 20px; margin-bottom: 15px; position: relative;
         `;
 
             const contentPoints = slide.content_points || slide.content || [];
@@ -3848,8 +3820,8 @@
             if (Array.isArray(contentPoints) && contentPoints.length > 0) {
                 contentHtml = `
                 <div style="margin-top: 10px;">
-                    <h5 style="color: #555; margin-bottom: 8px; font-size: 0.9em;">内容要点：</h5>
-                    <ul style="margin: 0; padding-left: 20px; color: #555; line-height: 1.6;">
+                    <h5 style="margin-bottom: 8px; font-size: 0.9em;">内容要点：</h5>
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
                         ${contentPoints.map(point => `<li style="margin-bottom: 5px;">${escapeHtml(point)}</li>`).join('')}
                     </ul>
                 </div>
@@ -3857,24 +3829,24 @@
             } else if (contentPoints) {
                 contentHtml = `
                 <div style="margin-top: 10px;">
-                    <h5 style="color: #555; margin-bottom: 8px; font-size: 0.9em;">内容：</h5>
-                    <div style="background: white; padding: 15px; border-radius: 6px; color: #555; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(contentPoints)}</div>
+                    <h5 style="margin-bottom: 8px; font-size: 0.9em;">内容：</h5>
+                    <div class="surface-subtle" style="padding: 15px; border-radius: 6px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(contentPoints)}</div>
                 </div>
             `;
             }
 
             slideDiv.innerHTML = `
             <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                <span style="background: #111; color: #fff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">
+                <span class="slide-number large" style="margin-right: 15px;">
                     ${escapeHtml(slide.page_number || index + 1)}
                 </span>
                 <div style="flex: 1;">
-                    <strong style="color: #111; font-size: 1.1em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
-                    ${slide.subtitle ? `<br><em style="color: #555; font-size: 0.9em;">${escapeHtml(slide.subtitle)}</em>` : ''}
+                    <strong class="todo-board-outline__card-title" style="font-size: 1.1em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
+                    ${slide.subtitle ? `<br><em class="todo-board-outline__card-subtitle" style="font-size: 0.9em;">${escapeHtml(slide.subtitle)}</em>` : ''}
                 </div>
             </div>
             ${contentHtml}
-            ${slide.slide_type ? `<div style="margin-top: 10px;"><span style="background: #f5f5f5; color: #111; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">类型: ${escapeHtml(slide.slide_type)}</span></div>` : ''}
+            ${slide.slide_type ? `<div style="margin-top: 10px;"><span class="surface-subtle" style="padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">类型: ${escapeHtml(slide.slide_type)}</span></div>` : ''}
         `;
 
             container.appendChild(slideDiv);
@@ -3897,7 +3869,7 @@
 
         const content = document.createElement('div');
         content.style.cssText = `
-        background: white; border-radius: 15px; padding: 30px;
+        background: var(--surface); border-radius: 8px; padding: 30px;
         max-width: 600px; max-height: 80vh; overflow-y: auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     `;
@@ -3966,10 +3938,11 @@
 
         const content = document.createElement('div');
         content.style.cssText = `
-        background: white; border-radius: 15px; padding: 30px;
+        background: var(--surface); border-radius: 8px; padding: 30px;
         width: 90%; max-width: 800px; height: 80vh; display: flex;
         flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     `;
+        content.className = 'todo-board-modal__content';
 
         content.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -4257,12 +4230,8 @@
             }
 
             // Update button styles
-            jsonViewBtn.style.background = '#111';
-            jsonViewBtn.style.color = '#fff';
-            jsonViewBtn.style.border = '1px solid #111';
-            outlineViewBtn.style.background = '#fff';
-            outlineViewBtn.style.color = '#111';
-            outlineViewBtn.style.border = '1px solid #111';
+            jsonViewBtn.classList.add('is-active');
+            outlineViewBtn.classList.remove('is-active');
         } else if (view === 'outline') {
             // Show outline view
             jsonView.style.display = 'none';
@@ -4278,12 +4247,8 @@
             }
 
             // Update button styles
-            outlineViewBtn.style.background = '#111';
-            outlineViewBtn.style.color = '#fff';
-            outlineViewBtn.style.border = '1px solid #111';
-            jsonViewBtn.style.background = '#fff';
-            jsonViewBtn.style.color = '#111';
-            jsonViewBtn.style.border = '1px solid #111';
+            outlineViewBtn.classList.add('is-active');
+            jsonViewBtn.classList.remove('is-active');
 
             // Generate outline view if content exists
             renderOutlineViewNew();
@@ -4489,13 +4454,13 @@
     // 渲染简洁视图
     function renderCompactOutlineView(slides, container) {
         const gridContainer = document.createElement('div');
-        gridContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;';
+        gridContainer.className = 'outline-compact-grid';
 
         slides.forEach((slide, index) => {
             const slideCard = document.createElement('div');
+            slideCard.className = 'outline-compact-card';
             slideCard.style.cssText = `
-            padding: 15px; background: white; border-radius: 8px;
-            border-left: 4px solid #111111; transition: all 0.3s ease;
+            padding: 15px; transition: all 0.3s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; cursor: pointer;
         `;
 
@@ -4511,12 +4476,13 @@
 
             // 操作按钮
             const actionButtons = document.createElement('div');
+            actionButtons.className = 'outline-compact-card__actions';
             actionButtons.style.cssText = 'position: absolute; top: 10px; right: 10px; display: flex; gap: 5px;';
             actionButtons.innerHTML = `
-            <button onclick="editSingleSlideNew(${index})" class="btn btn-primary" style="font-size: 0.7em; padding: 4px 8px; border-radius: 4px;" title="编辑此页">
+            <button onclick="editSingleSlideNew(${index})" style="font-size: 0.7em; padding: 4px 8px;" title="编辑此页">
                 <i class="fas fa-edit"></i>
             </button>
-            <button onclick="viewSlideDetailNew(${index})" class="btn btn-info" style="font-size: 0.7em; padding: 4px 8px; border-radius: 4px;" title="查看详情">
+            <button onclick="viewSlideDetailNew(${index})" style="font-size: 0.7em; padding: 4px 8px;" title="查看详情">
                 <i class="fas fa-eye"></i>
             </button>
         `;
@@ -4529,19 +4495,20 @@
             const header = document.createElement('div');
             header.style.cssText = 'display: flex; align-items: center; margin-bottom: 8px;';
             header.innerHTML = `
-            <span style="background: #111111; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: bold; margin-right: 10px;">
+            <span class="slide-number" style="margin-right: 10px;">
                 ${slide.page_number || index + 1}
             </span>
-            <strong style="color: #2c3e50; font-size: 0.9em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
+            <strong class="outline-compact-card__title" style="font-size: 0.9em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
         `;
 
             const subtitle = document.createElement('div');
             if (slide.subtitle) {
-                subtitle.innerHTML = `<p style="color: #7f8c8d; font-size: 0.8em; margin: 5px 0; font-style: italic;">${escapeHtml(slide.subtitle)}</p>`;
+                subtitle.innerHTML = `<p class="outline-compact-card__subtitle" style="font-size: 0.8em; margin: 5px 0; font-style: italic;">${escapeHtml(slide.subtitle)}</p>`;
             }
 
             const content = document.createElement('div');
-            content.style.cssText = 'color: #666; font-size: 0.8em; line-height: 1.4;';
+            content.className = 'outline-compact-card__content';
+            content.style.cssText = 'font-size: 0.8em; line-height: 1.4;';
 
             if (slide.content_points && slide.content_points.length > 0) {
                 const firstPoint = String(slide.content_points[0] ?? '');
@@ -4549,14 +4516,14 @@
                 content.innerHTML = escapeHtml(truncatedPoint);
 
                 if (slide.content_points.length > 1) {
-                    content.innerHTML += `<br><span style="color: #95a5a6;">+${slide.content_points.length - 1} 个要点</span>`;
+                    content.innerHTML += `<br><span class="outline-compact-card__count">+${slide.content_points.length - 1} 个要点</span>`;
                 }
             } else if (slide.content) {
                 const slideContent = String(slide.content);
                 const truncatedContent = slideContent.length > 80 ? slideContent.substring(0, 80) + '...' : slideContent;
                 content.innerHTML = escapeHtml(truncatedContent);
             } else {
-                content.innerHTML = '<span style="color: #95a5a6;">暂无内容</span>';
+                content.innerHTML = '<span class="outline-compact-card__empty">暂无内容</span>';
             }
 
             contentArea.appendChild(header);
@@ -4578,20 +4545,20 @@
 
         slides.forEach((slide, index) => {
             const slideDetail = document.createElement('div');
+            slideDetail.className = 'outline-detailed-card';
             slideDetail.style.cssText = `
-            padding: 20px; margin-bottom: 15px; background: white;
-            border-radius: 10px; border-left: 4px solid #111111; position: relative;
+            padding: 20px; margin-bottom: 15px; position: relative;
         `;
 
             const header = document.createElement('div');
             header.style.cssText = 'display: flex; align-items: center; margin-bottom: 15px;';
             header.innerHTML = `
-            <span style="background: #111111; color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">
+            <span class="slide-number large" style="margin-right: 15px;">
                 ${slide.page_number || index + 1}
             </span>
             <div style="flex: 1;">
-                <strong style="color: #2c3e50; font-size: 1.1em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
-                ${slide.subtitle ? `<br><em style="color: #7f8c8d; font-size: 0.9em;">${escapeHtml(slide.subtitle)}</em>` : ''}
+                <strong class="outline-detailed-card__title" style="font-size: 1.1em;">${escapeHtml(slide.title) || '未命名幻灯片'}</strong>
+                ${slide.subtitle ? `<br><em class="outline-detailed-card__subtitle" style="font-size: 0.9em;">${escapeHtml(slide.subtitle)}</em>` : ''}
             </div>
             <button onclick="editSingleSlideNew(${index})" class="btn btn-primary" style="font-size: 0.8em; padding: 6px 12px;" title="编辑此页">
                 <i class="fas fa-edit"></i> 编辑
@@ -4599,14 +4566,15 @@
         `;
 
             const contentSection = document.createElement('div');
+            contentSection.className = 'outline-detailed-card__content';
 
             if (slide.content_points && slide.content_points.length > 0) {
                 const pointsSection = document.createElement('div');
                 pointsSection.style.cssText = 'margin-top: 10px;';
-                pointsSection.innerHTML = '<h5 style="color: #555; margin-bottom: 8px; font-size: 0.9em;">内容要点：</h5>';
+                pointsSection.innerHTML = '<h5 style="margin-bottom: 8px; font-size: 0.9em;">内容要点：</h5>';
 
                 const pointsList = document.createElement('ul');
-                pointsList.style.cssText = 'margin: 0; padding-left: 20px; color: #555; line-height: 1.6;';
+                pointsList.style.cssText = 'margin: 0; padding-left: 20px; line-height: 1.6;';
 
                 slide.content_points.forEach(point => {
                     const listItem = document.createElement('li');
@@ -4621,8 +4589,8 @@
                 const contentDiv = document.createElement('div');
                 contentDiv.style.cssText = 'margin-top: 10px;';
                 contentDiv.innerHTML = `
-                <h5 style="color: #555; margin-bottom: 8px; font-size: 0.9em;">内容：</h5>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; color: #555; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(slide.content)}</div>
+                <h5 style="margin-bottom: 8px; font-size: 0.9em;">内容：</h5>
+                <div class="surface-subtle" style="padding: 15px; border-radius: 6px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(slide.content)}</div>
             `;
                 contentSection.appendChild(contentDiv);
             }
@@ -4631,7 +4599,7 @@
                 const typeTag = document.createElement('div');
                 typeTag.style.cssText = 'margin-top: 10px;';
                 typeTag.innerHTML = `
-                <span style="background: #e8f4fd; color: #111111; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">
+                <span style="background: var(--surface-subtle); color: var(--text-primary); padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">
                     类型: ${escapeHtml(slide.slide_type)}
                 </span>
             `;
@@ -4667,34 +4635,35 @@
 
             const content = document.createElement('div');
             content.style.cssText = `
-            background: white; border-radius: 15px; padding: 30px;
+            background: var(--surface); border-radius: 8px; padding: 30px;
             max-width: 600px; max-height: 80vh; overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         `;
+            content.className = 'todo-board-modal__content';
 
             let contentPoints = '';
             if (slide.content_points && slide.content_points.length > 0) {
-                contentPoints = '<h5 style="color: #555; margin: 15px 0 8px 0;">内容要点：</h5><ul style="margin: 0; padding-left: 20px; color: #555; line-height: 1.6;">';
+                contentPoints = '<h5 style="margin: 15px 0 8px 0;">内容要点：</h5><ul style="margin: 0; padding-left: 20px; line-height: 1.6;">';
                 slide.content_points.forEach(point => {
                     contentPoints += `<li style="margin-bottom: 5px;">${escapeHtml(point)}</li>`;
                 });
                 contentPoints += '</ul>';
             } else if (slide.content) {
-                contentPoints = `<h5 style="color: #555; margin: 15px 0 8px 0;">内容：</h5><div style="background: #f8f9fa; padding: 15px; border-radius: 6px; color: #555; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(slide.content)}</div>`;
+                contentPoints = `<h5 style="margin: 15px 0 8px 0;">内容：</h5><div class="surface-subtle" style="padding: 15px; border-radius: 6px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(slide.content)}</div>`;
             }
 
             content.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #2c3e50; margin: 0;">第${escapeHtml(slide.page_number || slideIndex + 1)}页详情</h3>
-                <button onclick="this.closest('.modal').remove()" style="background: transparent; color: #111; border: 1px solid #111; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">×</button>
+                <h3 style="margin: 0;">第${escapeHtml(slide.page_number || slideIndex + 1)}页详情</h3>
+                <button onclick="this.closest('.modal').remove()" style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">×</button>
             </div>
-            <h4 style="color: #111111; margin-bottom: 10px;">${escapeHtml(slide.title) || '未命名幻灯片'}</h4>
-            ${slide.subtitle ? `<p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">${escapeHtml(slide.subtitle)}</p>` : ''}
+            <h4 style="margin-bottom: 10px;">${escapeHtml(slide.title) || '未命名幻灯片'}</h4>
+            ${slide.subtitle ? `<p class="text-secondary" style="font-style: italic; margin-bottom: 15px;">${escapeHtml(slide.subtitle)}</p>` : ''}
             ${contentPoints}
-            ${slide.slide_type ? `<div style="margin-top: 15px;"><span style="background: #111111; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.9em;">类型: ${escapeHtml(slide.slide_type)}</span></div>` : ''}
+            ${slide.slide_type ? `<div style="margin-top: 15px;"><span class="surface-subtle" style="padding: 6px 12px; border-radius: 6px; font-size: 0.9em;">类型: ${escapeHtml(slide.slide_type)}</span></div>` : ''}
         `;
 
-            modal.className = 'modal';
+            modal.className = 'modal todo-board-modal';
             modal.appendChild(content);
             document.body.appendChild(modal);
 
@@ -4735,24 +4704,24 @@
 
         content.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="color: #111; margin: 0;">编辑PPT大纲</h3>
-            <button onclick="this.closest('.modal').remove()" style="background: transparent; color: #111; border: 1px solid #111; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">×</button>
+            <h3 style="margin: 0;">编辑PPT大纲</h3>
+            <button onclick="this.closest('.modal').remove()" style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">×</button>
         </div>
         <div style="flex: 1; display: flex; flex-direction: column;">
-            <textarea id="outlineEditorNew" style="flex: 1; border: 2px solid #d9d9d9; border-radius: 8px; padding: 15px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; resize: none; background: #fff; color: #111;" placeholder="编辑大纲JSON...">${escapeHtml(outlineContent)}</textarea>
+            <textarea id="outlineEditorNew" style="flex: 1; border: 2px solid var(--border-color); border-radius: 8px; padding: 15px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; resize: none; background: var(--surface); color: var(--text-primary);" placeholder="编辑大纲JSON...">${escapeHtml(outlineContent)}</textarea>
             <div style="display: flex; gap: 8px; margin-top: 15px; justify-content: space-between;">
-                <button onclick="aiOptimizeJSONOutlineInModal()" class="btn btn-sm" style="background: #111; color: #fff; border: 1px solid #111;">
+                <button onclick="aiOptimizeJSONOutlineInModal()" class="btn btn-sm" style="background: var(--action-primary-background); color: var(--action-primary-foreground); border: 1px solid var(--action-primary-background);">
                     <i class="fas fa-magic"></i> 优化大纲
                 </button>
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="this.closest('.modal').remove()" class="btn btn-sm" style="background: #fff; color: #111; border: 1px solid #111;">取消</button>
-                    <button onclick="saveOutlineChangesNew()" class="btn btn-sm btn-primary" style="background: #111; color: #fff; border: 1px solid #111;">保存修改</button>
+                    <button onclick="this.closest('.modal').remove()" class="btn btn-sm" style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-color);">取消</button>
+                    <button onclick="saveOutlineChangesNew()" class="btn btn-sm btn-primary" style="background: var(--action-primary-background); color: var(--action-primary-foreground); border: 1px solid var(--action-primary-background);">保存修改</button>
                 </div>
             </div>
         </div>
     `;
 
-        modal.className = 'modal';
+        modal.className = 'modal todo-board-modal';
         modal.appendChild(content);
         document.body.appendChild(modal);
     }
@@ -5661,6 +5630,7 @@
 
             // 创建弹窗内容
             const content = document.createElement('div');
+            content.className = 'ai-optimize-modal__content';
             content.style.cssText = `
             background: #fff;
             border-radius: 20px; padding: 0; max-width: 600px; width: 100%;
@@ -5692,24 +5662,24 @@
                 .ai-optimize-modal .suggestion-tag {
                     display: inline-block;
                     padding: 6px 12px;
-                    background: #111;
-                    color: #fff;
+                    background: var(--action-primary-background);
+                    color: var(--action-primary-foreground);
                     border-radius: 20px;
                     font-size: 12px;
                     margin: 4px;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                    border: 1px solid #111;
+                    border: 1px solid var(--action-primary-background);
                     font-family: inherit;
                 }
                 .ai-optimize-modal .suggestion-tag:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-                    background: #000;
+                    background: var(--action-primary-hover);
                 }
                 .ai-optimize-modal textarea:focus {
                     outline: none;
-                    border-color: #111;
+                    border-color: var(--action-primary-background);
                     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
                 }
                 .ai-optimize-modal textarea.shake {
@@ -5723,7 +5693,7 @@
             </style>
 
             <!-- 头部 -->
-            <div style="background: #111; color: #fff; padding: 25px 30px; border-radius: 20px 20px 0 0; position: relative;">
+            <div class="ai-optimize-modal__header" style="padding: 25px 30px; position: relative;">
                 <div style="position: relative; z-index: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -5740,26 +5710,26 @@
             </div>
 
             <!-- 内容区域 -->
-            <div style="padding: 30px; flex: 1; overflow-y: auto;">
+            <div class="ai-optimize-modal__body" style="padding: 30px; flex: 1; overflow-y: auto;">
                 <!-- 当前信息展示 -->
-                <div style="background: #f5f5f5; border-left: 4px solid #111; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="color: #111; font-size: 0.9em; line-height: 1.6;">
-                        <strong style="color: #111;"><i class="fas fa-info-circle"></i> 当前内容</strong><br>
+                <div class="ai-optimize-modal__info" style="border-left: 4px solid; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-size: 0.9em; line-height: 1.6;">
+                        <strong><i class="fas fa-info-circle"></i> 当前内容</strong><br>
                         <span class="ai-optimize-current-info" style="white-space: pre-line;"></span>
                     </div>
                 </div>
 
                 <!-- 输入框 -->
                 <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 10px; color: #111; font-weight: 600; font-size: 0.95em;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; font-size: 0.95em;">
                         <i class="fas fa-edit"></i> 请描述您的优化需求
                     </label>
-                    <textarea class="ai-optimize-input" aria-label="优化需求" style="width: 100%; min-height: 120px; padding: 15px; border: 2px solid #d9d9d9; border-radius: 10px; font-size: 14px; resize: vertical; font-family: inherit; transition: all 0.3s ease; background: #fff; color: #111;" placeholder="详细描述您希望如何优化此内容...\n\n例如：\n- 增加更多技术细节\n- 重新组织逻辑结构\n- 添加案例分析"></textarea>
+                    <textarea class="ai-optimize-input" aria-label="优化需求" style="width: 100%; min-height: 120px; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; transition: all 0.3s ease; background: var(--surface); color: var(--text-primary);" placeholder="详细描述您希望如何优化此内容...\n\n例如：\n- 增加更多技术细节\n- 重新组织逻辑结构\n- 添加案例分析"></textarea>
                 </div>
 
                 <!-- 快捷建议 -->
                 <div style="margin-bottom: 10px;">
-                    <label style="display: block; margin-bottom: 10px; color: #555; font-size: 0.85em;">
+                    <label class="ai-optimize-modal__secondary" style="display: block; margin-bottom: 10px; font-size: 0.85em;">
                         <i class="fas fa-lightbulb"></i> 点击快捷建议快速填充
                     </label>
                     <div class="ai-optimize-suggestion-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
@@ -5767,15 +5737,15 @@
             </div>
 
             <!-- 底部按钮 -->
-            <div style="padding: 20px 30px; background: #fff; border-radius: 0 0 20px 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d9d9d9;">
-                <div style="color: #555; font-size: 0.85em;">
+            <div class="ai-optimize-modal__footer" style="padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color);">
+                <div class="ai-optimize-footer-copy" style="font-size: 0.85em;">
                     <i class="fas fa-robot"></i> AI将根据您的需求智能优化内容
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn btn-sm ai-optimize-cancel" style="background: #fff; color: #111; padding: 10px 20px; border: 1px solid #111;">
+                    <button type="button" class="btn btn-sm ai-optimize-cancel" style="background: var(--surface); color: var(--text-primary); padding: 10px 20px; border: 1px solid var(--border-color);">
                         <i class="fas fa-times"></i> 取消
                     </button>
-                    <button type="button" class="btn btn-sm ai-optimize-confirm" style="background: #111; color: #fff; padding: 10px 24px; border: 1px solid #111;">
+                    <button type="button" class="btn btn-sm ai-optimize-confirm" style="background: var(--action-primary-background); color: var(--action-primary-foreground); padding: 10px 24px; border: 1px solid var(--action-primary-background);">
                         <i class="fas fa-magic"></i> 开始优化
                     </button>
                 </div>

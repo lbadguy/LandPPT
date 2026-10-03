@@ -2,6 +2,13 @@
 
 {% block title %}TODO 看板 - {{ todo_board.title }} - LandPPT{% endblock %}
 
+{% block app_context %}
+<div class="app-topbar__context" aria-label="当前项目">
+    <i class="fas fa-folder-open" aria-hidden="true"></i>
+    <h1 class="app-topbar__context-title">{{ todo_board.title }}</h1>
+</div>
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="/static/css/shared/unattended_monitor.css">
 <style>

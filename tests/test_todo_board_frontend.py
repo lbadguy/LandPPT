@@ -16,11 +16,45 @@ TODO_BOARD_JS = (
     / "src" / "landppt" / "web" / "templates" / "components" / "project"
     / "todo_board" / "extra_js_1.html"
 )
+TODO_BOARD_TEMPLATE = TODO_BOARD_JS.with_name("content_1.html")
+TODO_BOARD_STYLES = TODO_BOARD_JS.with_name("extra_css_1.html")
+TODO_BOARD_PAGE = (
+    REPO / "src" / "landppt" / "web" / "templates" / "pages" / "project" / "todo_board.html"
+)
 
 
 @pytest.fixture(scope="module")
 def js() -> str:
     return TODO_BOARD_JS.read_text(encoding="utf-8")
+
+
+class TestTodoBoardActions:
+    def test_primary_actions_share_a_safe_fixed_dock(self):
+        template = TODO_BOARD_TEMPLATE.read_text(encoding="utf-8")
+        styles = TODO_BOARD_STYLES.read_text(encoding="utf-8")
+
+        assert '<button type="submit" form="requirements-form" id="confirm-requirements-btn"' in template
+        assert template.count('id="start-ppt-button"') == 1
+        assert 'class="todo-action-dock" id="todoActionDock"' in template
+        assert "env(safe-area-inset-bottom)" in styles
+        assert "padding-bottom: calc(var(--todo-action-dock-space)" in styles
+        assert ".todo-action-button--ppt" in styles
+
+    def test_topbar_project_context_is_a_page_level_slot(self):
+        page = TODO_BOARD_PAGE.read_text(encoding="utf-8")
+        base = (REPO / "src" / "landppt" / "web" / "templates" / "base.html").read_text(encoding="utf-8")
+
+        assert '{% block app_context %}' in base
+        assert '{% block app_context %}' in page
+        assert "项目ID" not in TODO_BOARD_TEMPLATE.read_text(encoding="utf-8")
+
+    def test_outline_cards_use_stable_theme_aware_tokens(self):
+        styles = TODO_BOARD_STYLES.read_text(encoding="utf-8")
+
+        assert "flex: 0 0 24px" in styles
+        assert "font-variant-numeric: tabular-nums" in styles
+        assert "grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr))" in styles
+        assert "html.dark .modal > div" in styles
 
 
 def _slice(source: str, marker: str, length: int = 1500) -> str:
