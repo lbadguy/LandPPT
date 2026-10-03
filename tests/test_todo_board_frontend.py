@@ -97,6 +97,35 @@ class TestStreamCancellation:
     def test_handles_are_released_in_finally(self, js):
         assert "if (activeOutlineStreamController === streamAbortController)" in js
 
+    def test_user_stop_button_is_only_added_to_streaming_generation(self, js):
+        markup = _slice(js, "function getOutlineLoadingMarkup(", 1200)
+        assert "showStopButton = false" in markup
+        assert "stopOutlineGenerationByUser()" in markup
+        assert "showStopButton: true" in js
+
+    def test_user_stop_cancels_disconnect_recovery_requests(self, js):
+        recovery = _slice(js, "async function waitForPersistedProjectOutlineAfterDisconnect(", 2200)
+        assert "while (!signal?.aborted" in recovery
+        assert "fetchOutlineStageStatus({ signal })" in recovery
+        assert "fetchPersistedProjectOutline({ requireFresh: true, signal })" in recovery
+        assert "await sleep(OUTLINE_STREAM_RECOVERY_POLL_INTERVAL_MS, signal)" in recovery
+        assert "signal: streamAbortController.signal" in js
+
+    def test_manual_stop_during_recovery_does_not_show_disconnect_error(self, js):
+        recovery = _slice(js, "const recoveredOutline = await waitForPersistedProjectOutlineAfterDisconnect(", 3200)
+        assert 'streamAbortController.signal.aborted' in recovery
+        assert 'manuallyStoppedOutlineStreamController === streamAbortController' in recovery
+        assert recovery.index('manuallyStoppedOutlineStreamController === streamAbortController') < recovery.index(
+            'showOutlineGenerationError(errorMessage'
+        )
+
+    def test_eof_recovers_a_persisted_completed_outline(self, js):
+        eof = _slice(js, "if (!receivedDone) {\n                const finalChunk", 3200)
+        assert 'decoder.decode()' in eof
+        assert 'waitForCompletedProjectOutlineAfterStream({' in eof
+        assert 'applyCompletedOutlineToTodoBoard(completedOutline' in eof
+        assert 'scheduleOutlineBoardReload()' in eof
+
 
 class TestDoubleSubmitGuards:
     def test_regenerate_has_an_in_flight_guard(self, js):

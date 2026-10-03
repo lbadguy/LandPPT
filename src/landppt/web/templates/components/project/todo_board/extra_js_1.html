@@ -18,6 +18,8 @@
     const MAX_OUTLINE_RENDER_RETRIES = 5;
     const OUTLINE_STREAM_RECOVERY_POLL_INTERVAL_MS = 10000;
     const OUTLINE_STREAM_RECOVERY_TIMEOUT_MS = 30 * 60 * 1000;
+    const OUTLINE_STREAM_EOF_CHECK_TIMEOUT_MS = 5000;
+    const OUTLINE_STREAM_EOF_CHECK_INTERVAL_MS = 500;
 
     const projectMetadata = {{ (project.project_metadata if project and project.project_metadata else { }) | tojson }};
     const initialProjectOutline = {{ (project.outline if project and project.outline else none) | tojson }};
@@ -37,6 +39,8 @@
     // can cancel it instead of leaving two streams writing to the same nodes.
     let activeOutlineStreamController = null;
     let activeOutlineStreamReader = null;
+    let manuallyStoppedOutlineStreamController = null;
+    let outlineBoardReloadScheduled = false;
 
     function abortActiveOutlineStream(reason) {
         if (activeOutlineStreamReader) {
@@ -148,7 +152,13 @@
         }
     }
 
-    function getOutlineLoadingMarkup({ brainId = 'loading-brain', title = '', subtitle = '', tips = '', icon = 'fa-brain', chipText = '大纲生成' } = {}) {
+    function getOutlineLoadingMarkup({ brainId = 'loading-brain', title = '', subtitle = '', tips = '', icon = 'fa-brain', chipText = '大纲生成', showStopButton = false } = {}) {
+        const stopButtonMarkup = showStopButton ? `
+                            <button type="button" class="btn btn-secondary" style="margin-top: 12px;"
+                                aria-label="停止大纲生成" title="停止后续生成；当前正在处理的外部请求可能先返回"
+                                onclick="stopOutlineGenerationByUser()">
+                                <i class="fas fa-stop" aria-hidden="true"></i> 停止生成
+                            </button>` : '';
         return `
         <div class="outline-loading">
             <div class="loading-grid">
@@ -170,6 +180,7 @@
                             <div class="overlay-text">大纲生成中</div>
                             <div class="overlay-step">正在理解主题...</div>
                             <div class="micro-progress"><span></span></div>
+                            ${stopButtonMarkup}
                         </div>
                     </div>
                 </div>
@@ -663,8 +674,29 @@
         }
     }
 
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    function sleep(ms, signal = null) {
+        return new Promise(resolve => {
+            if (signal && signal.aborted) {
+                resolve();
+                return;
+            }
+
+            let timer = null;
+            const finish = () => {
+                if (timer !== null) {
+                    clearTimeout(timer);
+                }
+                if (signal) {
+                    signal.removeEventListener('abort', finish);
+                }
+                resolve();
+            };
+
+            timer = setTimeout(finish, ms);
+            if (signal) {
+                signal.addEventListener('abort', finish, { once: true });
+            }
+        });
     }
 
     // Yield to the browser between stream chunks. Resolves on whichever of rAF or
@@ -726,10 +758,11 @@
         return computeOutlineSignature(outline) !== outlineSignatureAtGenerationStart;
     }
 
-    async function fetchPersistedProjectOutline({ requireFresh = false } = {}) {
+    async function fetchPersistedProjectOutline({ requireFresh = false, signal = null } = {}) {
         const response = await fetch(`/api/projects/${currentProjectId}`, {
             cache: 'no-store',
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            signal
         });
         if (!response.ok) {
             return null;
@@ -745,28 +778,90 @@
         return outline;
     }
 
-    async function waitForPersistedProjectOutlineAfterDisconnect({ onPoll = null } = {}) {
+    async function fetchOutlineStageStatus({ signal = null } = {}) {
+        const response = await fetch(`/api/projects/${currentProjectId}/todo`, {
+            cache: 'no-store',
+            credentials: 'same-origin',
+            signal
+        });
+        if (!response.ok) {
+            return null;
+        }
+        const todoBoard = await response.json();
+        const outlineStage = Array.isArray(todoBoard.stages)
+            ? todoBoard.stages.find(stage => stage && stage.id === 'outline_generation')
+            : null;
+        return outlineStage ? outlineStage.status : null;
+    }
+
+    function scheduleOutlineBoardReload() {
+        if (outlineBoardReloadScheduled) {
+            return;
+        }
+        outlineBoardReloadScheduled = true;
+        window.setTimeout(() => window.location.reload(), 1000);
+    }
+
+    async function waitForCompletedProjectOutlineAfterStream({ signal = null } = {}) {
+        const startedAt = Date.now();
+        while (!signal?.aborted && Date.now() - startedAt < OUTLINE_STREAM_EOF_CHECK_TIMEOUT_MS) {
+            try {
+                if (await fetchOutlineStageStatus({ signal }) === 'completed') {
+                    const outline = await fetchPersistedProjectOutline({ signal });
+                    if (outline) {
+                        return outline;
+                    }
+                }
+            } catch (error) {
+                if (signal?.aborted) {
+                    return null;
+                }
+                // A short bounded check is enough to distinguish a completed run from a lost stream.
+            }
+            await sleep(OUTLINE_STREAM_EOF_CHECK_INTERVAL_MS, signal);
+        }
+        return null;
+    }
+
+    async function waitForPersistedProjectOutlineAfterDisconnect({ onPoll = null, signal = null } = {}) {
         const startedAt = Date.now();
         let attempt = 0;
 
-        while (Date.now() - startedAt < OUTLINE_STREAM_RECOVERY_TIMEOUT_MS) {
+        while (!signal?.aborted && Date.now() - startedAt < OUTLINE_STREAM_RECOVERY_TIMEOUT_MS) {
             attempt += 1;
             if (typeof onPoll === 'function') {
                 onPoll(attempt);
             }
 
             try {
+                const stageStatus = await fetchOutlineStageStatus({ signal });
+                if (signal?.aborted) {
+                    return null;
+                }
+                if (stageStatus === 'completed') {
+                    const completedOutline = await fetchPersistedProjectOutline({ signal });
+                    if (completedOutline) {
+                        return completedOutline;
+                    }
+                }
+                if (stageStatus === 'failed') {
+                    return null;
+                }
+
                 // requireFresh: reject the pre-existing outline, otherwise the very
                 // first poll "recovers" the previous version instantly.
-                const outline = await fetchPersistedProjectOutline({ requireFresh: true });
+                const outline = await fetchPersistedProjectOutline({ requireFresh: true, signal });
                 if (outline) {
                     return outline;
                 }
             } catch (error) {
+                if (signal?.aborted) {
+                    return null;
+                }
                 // Keep polling; the stream may have dropped while the background generation is still running.
             }
 
-            await sleep(OUTLINE_STREAM_RECOVERY_POLL_INTERVAL_MS);
+            await sleep(OUTLINE_STREAM_RECOVERY_POLL_INTERVAL_MS, signal);
         }
 
         return null;
@@ -798,6 +893,44 @@
 
         showStartPPTButton();
         return true;
+    }
+
+    async function stopOutlineGenerationByUser() {
+        const streamController = activeOutlineStreamController;
+        if (!outlineGenerationStarted || !streamController) {
+            return;
+        }
+
+        manuallyStoppedOutlineStreamController = streamController;
+        abortActiveOutlineStream('stopped by user');
+        stopBookAnimation('stream');
+        stopFunnelAnimation('stream');
+        stopOutlineGenerationAnimations('stopped by user');
+
+        const contentDiv = document.getElementById('outline-content-display');
+        const placeholderDiv = document.getElementById('outline-placeholder');
+        const cursorDiv = document.getElementById('outline-cursor');
+        if (cursorDiv) {
+            cursorDiv.style.display = 'none';
+        }
+
+        try {
+            if (await fetchOutlineStageStatus() === 'completed') {
+                const outline = await fetchPersistedProjectOutline();
+                if (outline && contentDiv && applyCompletedOutlineToTodoBoard(outline, contentDiv, placeholderDiv)) {
+                    scheduleOutlineBoardReload();
+                    return;
+                }
+            }
+        } catch (error) {
+            // The browser stream is already aborted; report the stop request even if status lookup fails.
+        }
+
+        await updateStageStatusSilent('outline_generation', 'failed', null);
+        showOutlineGenerationError(
+            '已请求停止生成。当前正在处理的 Tavily 或 AI 请求可能返回后才会结束，之后可重新生成。',
+            'regenerateOutlineNew'
+        );
     }
 
     function shouldRenderInitialOutlineSection() {
@@ -1191,7 +1324,8 @@
                 brainId: 'loading-brain-outline-view',
                 title: 'AI 正在生成 PPT 大纲',
                 subtitle: '根据需求梳理章节、层次与要点',
-                tips: 'AI正在根据您的需求智能生成PPT大纲，包括标题、内容要点和逻辑结构。生成完成后您可以实时编辑和调整。'
+                tips: 'AI正在根据您的需求智能生成PPT大纲，包括标题、内容要点和逻辑结构。生成完成后您可以实时编辑和调整。',
+                showStopButton: true
             })}
                         </div>
                         <div id="outline-loading-new" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #7f8c8d; display: none;">
@@ -1480,7 +1614,8 @@
                 brainId: 'loading-brain-stream',
                 title: 'AI 正在生成 PPT 大纲',
                 subtitle: '根据需求梳理章节、层次与要点',
-                tips: 'AI正在根据您的需求智能生成PPT大纲，包括标题、内容要点和逻辑结构。生成完成后您可以实时编辑和调整。'
+                tips: 'AI正在根据您的需求智能生成PPT大纲，包括标题、内容要点和逻辑结构。生成完成后您可以实时编辑和调整。',
+                showStopButton: true
             })}
         `;
             placeholderDiv.className = 'loading-container';
@@ -1510,6 +1645,7 @@
         abortActiveOutlineStream('superseded by a new generation');
         const streamAbortController = new AbortController();
         activeOutlineStreamController = streamAbortController;
+        manuallyStoppedOutlineStreamController = null;
 
         try {
             // 调用流式大纲生成接口（避免长时间请求导致 504）
@@ -1895,6 +2031,63 @@
             }
 
             if (!receivedDone) {
+                const finalChunk = `${buffer}${decoder.decode()}`;
+                buffer = '';
+                for (const line of finalChunk.split('\n')) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine.startsWith('data:')) continue;
+
+                    let data;
+                    try {
+                        data = JSON.parse(trimmedLine.substring(5).trim());
+                    } catch (parseError) {
+                        continue;
+                    }
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    if (data.outline) {
+                        parsedOutlineData = data.outline;
+                    }
+                    if (data.content_reset) {
+                        outlineContent = '';
+                        beginOutlineStreamSection(data.content_header || 'LLM 实时输出');
+                    }
+                    if (data.content) {
+                        outlineContent += data.content;
+                        appendOutlineStreamContent(data.content);
+                    }
+                    if (data.done) {
+                        finalizeOutlineStreamPreview();
+                        receivedDone = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!receivedDone) {
+                const completedOutline = await waitForCompletedProjectOutlineAfterStream({
+                    signal: streamAbortController.signal
+                });
+                if (
+                    streamAbortController.signal.aborted ||
+                    manuallyStoppedOutlineStreamController === streamAbortController
+                ) {
+                    if (cursorDiv) cursorDiv.style.display = 'none';
+                    destroyOutlineStreamPreviewRenderers();
+                    return;
+                }
+                if (completedOutline) {
+                    stopBookAnimation('stream');
+                    stopFunnelAnimation('stream');
+                    stopOutlineGenerationAnimations('outline generation completed after stream EOF');
+                    applyCompletedOutlineToTodoBoard(completedOutline, contentDiv, placeholderDiv);
+                    if (cursorDiv) cursorDiv.style.display = 'none';
+                    destroyOutlineStreamPreviewRenderers();
+                    scheduleOutlineBoardReload();
+                    return;
+                }
                 throw new TypeError('outline stream ended before completion');
             }
 
@@ -1986,10 +2179,20 @@
             if (isNetworkDisconnect) {
                 setOutlineStreamStatusPreview('recovery', '流式连接已中断，正在等待后台生成结果...');
                 const recoveredOutline = await waitForPersistedProjectOutlineAfterDisconnect({
+                    signal: streamAbortController.signal,
                     onPoll: () => {
                         setOutlineStreamStatusPreview('recovery', '流式连接已中断，后台仍可能在生成，正在检查结果...');
                     }
                 });
+
+                if (
+                    streamAbortController.signal.aborted ||
+                    manuallyStoppedOutlineStreamController === streamAbortController
+                ) {
+                    if (cursorDiv) cursorDiv.style.display = 'none';
+                    destroyOutlineStreamPreviewRenderers();
+                    return;
+                }
 
                 if (recoveredOutline) {
                     stopBookAnimation('stream');
@@ -2026,6 +2229,9 @@
             if (activeOutlineStreamController === streamAbortController) {
                 activeOutlineStreamController = null;
                 activeOutlineStreamReader = null;
+            }
+            if (manuallyStoppedOutlineStreamController === streamAbortController) {
+                manuallyStoppedOutlineStreamController = null;
             }
         }
     }
