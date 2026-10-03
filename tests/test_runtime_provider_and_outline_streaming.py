@@ -140,6 +140,29 @@ def test_runtime_research_service_initializes_research_attrs_on_owner(monkeypatc
 
 
 @pytest.mark.asyncio
+async def test_async_runtime_selector_uses_database_backed_availability():
+    class DatabaseConfiguredResearchService:
+        def is_available(self):
+            return False
+
+        async def is_available_async(self):
+            return True
+
+    enhanced = DatabaseConfiguredResearchService()
+    owner = SimpleNamespace(
+        enhanced_research_service=enhanced,
+        enhanced_report_generator="enhanced-report-generator",
+        research_service=None,
+    )
+    service = RuntimeResearchService(_RuntimeResearchSupportStub(owner))
+
+    selected = await service._get_preferred_outline_research_runtime_async()
+
+    assert selected["service"] is enhanced
+    assert selected["provider"] == "enhanced"
+
+
+@pytest.mark.asyncio
 async def test_runtime_provider_service_passes_system_prompt_to_chat_completion(monkeypatch):
     provider = _FakeProvider()
     service = RuntimeProviderService(_RuntimeStubService())

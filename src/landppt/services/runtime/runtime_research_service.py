@@ -153,6 +153,47 @@ class RuntimeResearchService:
                 "is_enhanced": False,
             }
 
+    async def _get_preferred_outline_research_runtime_async(self) -> Dict[str, Any]:
+            """Resolve database-backed provider availability before selecting it."""
+            enhanced_service = getattr(self._owner, "enhanced_research_service", None)
+            enhanced_check = getattr(enhanced_service, "is_available_async", None)
+            enhanced_available = (
+                await enhanced_check()
+                if callable(enhanced_check)
+                else enhanced_service is not None
+                and getattr(enhanced_service, "is_available", lambda: True)()
+            )
+            if enhanced_service is not None and enhanced_available:
+                return {
+                    "service": enhanced_service,
+                    "report_generator": getattr(self._owner, "enhanced_report_generator", None),
+                    "provider": "enhanced",
+                    "is_enhanced": True,
+                }
+
+            legacy_service = getattr(self._owner, "research_service", None)
+            legacy_check = getattr(legacy_service, "is_available_async", None)
+            legacy_available = (
+                await legacy_check()
+                if callable(legacy_check)
+                else legacy_service is not None
+                and getattr(legacy_service, "is_available", lambda: True)()
+            )
+            if legacy_service is not None and legacy_available:
+                return {
+                    "service": legacy_service,
+                    "report_generator": getattr(self._owner, "report_generator", None),
+                    "provider": "legacy",
+                    "is_enhanced": False,
+                }
+
+            return {
+                "service": None,
+                "report_generator": None,
+                "provider": None,
+                "is_enhanced": False,
+            }
+
     def _create_research_context(self, research_report: Any) -> str:
             """
             Convert a research report (DEEP or Enhanced) into a compact Markdown document.

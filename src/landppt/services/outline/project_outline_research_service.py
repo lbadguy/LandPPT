@@ -93,7 +93,7 @@ class ProjectOutlineResearchService:
             except Exception:
                 pass
 
-        research_runtime = self._get_preferred_outline_research_runtime()
+        research_runtime = await self._get_preferred_outline_research_runtime_async()
         research_service = research_runtime.get('service')
         report_generator = research_runtime.get('report_generator')
         provider = research_runtime.get('provider')

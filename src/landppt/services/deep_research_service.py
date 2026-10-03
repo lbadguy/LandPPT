@@ -154,8 +154,8 @@ class DEEPResearchService:
             self._active_tavily_key_source = None
             return None
 
-        runtime_config = await self._get_tavily_runtime_config_async()
         source, api_key = candidates[0]
+        runtime_config = await self._get_tavily_runtime_config_async(source)
         return self._create_tavily_client(
             api_key, source, runtime_config.get("base_url")
         )
@@ -171,11 +171,11 @@ class DEEPResearchService:
             seen_keys.add(api_key)
             candidates.append((source, api_key))
 
-        if self.user_id is not None:
-            try:
-                from .db_config_service import get_db_config_service
+        try:
+            from .db_config_service import get_db_config_service
 
-                db_config_service = get_db_config_service()
+            db_config_service = get_db_config_service()
+            if self.user_id is not None:
                 if await db_config_service.is_user_override(
                     self.user_id, "tavily_api_key"
                 ):
@@ -187,19 +187,21 @@ class DEEPResearchService:
                         ),
                     )
 
-                add_candidate(
-                    "system database default",
-                    await db_config_service.get_config_value(
-                        "tavily_api_key", user_id=None
-                    ),
-                )
-            except Exception as e:
-                logger.warning(f"Failed to get Tavily API key from database: {e}")
+            add_candidate(
+                "system database default",
+                await db_config_service.get_config_value(
+                    "tavily_api_key", user_id=None
+                ),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to get Tavily API key from database: {e}")
 
         add_candidate("process environment", ai_config.tavily_api_key)
         return candidates
 
-    async def _get_tavily_runtime_config_async(self) -> Dict[str, Any]:
+    async def _get_tavily_runtime_config_async(
+        self, key_source: Optional[str] = None
+    ) -> Dict[str, Any]:
         config = {
             "base_url": _normalize_url_value(
                 getattr(ai_config, "tavily_base_url", None)
@@ -224,7 +226,7 @@ class DEEPResearchService:
                 if domain.strip()
             ]
 
-        if self.user_id is None:
+        if key_source == "process environment":
             return config
 
         try:
@@ -233,7 +235,12 @@ class DEEPResearchService:
 
             async with AsyncSessionLocal() as session:
                 repo = UserConfigRepository(session)
-                db_configs = await repo.get_all_configs(self.user_id)
+                config_user_id = (
+                    self.user_id
+                    if key_source != "system database default"
+                    else None
+                )
+                db_configs = await repo.get_all_configs(config_user_id)
 
             if "tavily_base_url" in db_configs:
                 normalized_db_base_url = _normalize_url_value(
@@ -258,6 +265,50 @@ class DEEPResearchService:
             logger.warning(f"Failed to load Tavily runtime config from database: {e}")
 
         return config
+
+    async def test_tavily_connection(self) -> Dict[str, Any]:
+        """Check saved Tavily credentials using the no-credit usage endpoint."""
+        candidates = await self._get_tavily_api_key_candidates_async()
+        if not candidates:
+            return {"success": False, "error": "尚未配置 Tavily API Key"}
+
+        last_status = None
+        for index, (source, api_key) in enumerate(candidates):
+            runtime_config = await self._get_tavily_runtime_config_async(source)
+            base_url = runtime_config.get("base_url") or "https://api.tavily.com"
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        f"{base_url.rstrip('/')}/usage",
+                        headers={"Authorization": f"Bearer {api_key}"},
+                        timeout=aiohttp.ClientTimeout(total=15),
+                    ) as response:
+                        if response.status == 200:
+                            return {
+                                "success": True,
+                                "message": "Tavily 连接成功",
+                                "credential_source": source,
+                            }
+                        last_status = response.status
+                        if response.status not in (401, 403):
+                            break
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+                logger.warning(
+                    "Tavily connection check failed (%s)", type(error).__name__
+                )
+                return {
+                    "success": False,
+                    "error": "Tavily 连接失败，请检查网络和 Base URL",
+                }
+
+            if index + 1 < len(candidates) and last_status in (401, 403):
+                continue
+
+        if last_status in (401, 403):
+            return {"success": False, "error": "Tavily API Key 无效或无权限"}
+        if last_status is not None:
+            return {"success": False, "error": f"Tavily 返回 HTTP {last_status}"}
+        return {"success": False, "error": "Tavily 连接失败"}
 
     def _create_tavily_client(
         self, api_key: str, source: str, base_url: Optional[str] = None
@@ -1893,21 +1944,21 @@ class DEEPResearchService:
         if not candidates:
             raise ValueError("Tavily client not initialized - API key may be missing")
 
-        runtime_config = await self._get_tavily_runtime_config_async()
-        search_params = {
-            "query": query,
-            "search_depth": runtime_config["search_depth"],
-            "max_results": runtime_config["max_results"],
-            "include_answer": True,
-            "include_raw_content": False,
-        }
-        if runtime_config["include_domains"]:
-            search_params["include_domains"] = runtime_config["include_domains"]
-        if runtime_config["exclude_domains"]:
-            search_params["exclude_domains"] = runtime_config["exclude_domains"]
-
         last_auth_error = None
         for index, (source, api_key) in enumerate(candidates):
+            runtime_config = await self._get_tavily_runtime_config_async(source)
+            search_params = {
+                "query": query,
+                "search_depth": runtime_config["search_depth"],
+                "max_results": runtime_config["max_results"],
+                "include_answer": True,
+                "include_raw_content": False,
+            }
+            if runtime_config["include_domains"]:
+                search_params["include_domains"] = runtime_config["include_domains"]
+            if runtime_config["exclude_domains"]:
+                search_params["exclude_domains"] = runtime_config["exclude_domains"]
+
             tavily_client = self._create_tavily_client(
                 api_key, source, runtime_config.get("base_url")
             )
@@ -2285,6 +2336,12 @@ class DEEPResearchService:
         return self.ai_provider is not None and (
             self.tavily_client is not None
             or bool(_normalize_secret_value(ai_config.tavily_api_key))
+        )
+
+    async def is_available_async(self) -> bool:
+        """Check availability using saved user and system credentials."""
+        return self.ai_provider is not None and bool(
+            await self._get_tavily_api_key_candidates_async()
         )
 
     def get_status(self) -> Dict[str, Any]:

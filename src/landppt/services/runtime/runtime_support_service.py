@@ -77,6 +77,9 @@ class RuntimeSupportService:
     def _get_preferred_outline_research_runtime(self) -> Dict[str, Any]:
         return self._research_runtime._get_preferred_outline_research_runtime()
 
+    async def _get_preferred_outline_research_runtime_async(self) -> Dict[str, Any]:
+        return await self._research_runtime._get_preferred_outline_research_runtime_async()
+
     def _create_research_context(self, research_report: Any) -> str:
         return self._research_runtime._create_research_context(research_report)
 

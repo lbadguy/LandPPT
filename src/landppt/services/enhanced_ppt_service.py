@@ -163,6 +163,10 @@ class EnhancedPPTService(PPTService):
         return self.runtime_support._get_preferred_outline_research_runtime()
 
 
+    async def _get_preferred_outline_research_runtime_async(self) -> Dict[str, Any]:
+        return await self.runtime_support._get_preferred_outline_research_runtime_async()
+
+
     def _create_research_context(self, research_report: Any) -> str:
         return self.runtime_support._create_research_context(research_report)
 

@@ -636,6 +636,17 @@ async def test_landppt_provider(
         }
 
 
+@router.post("/api/config/tavily/test")
+async def test_tavily_connection(
+    user: User = Depends(get_current_user_required),
+):
+    """Check the effective saved Tavily key without returning secret or usage data."""
+    from ..services.deep_research_service import DEEPResearchService
+
+    service = DEEPResearchService(user_id=user.id)
+    return await service.test_tavily_connection()
+
+
 # Generic category routes last
 @router.get("/api/config/{category}")
 async def get_config_by_category(

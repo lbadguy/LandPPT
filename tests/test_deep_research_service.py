@@ -49,6 +49,71 @@ def test_is_tavily_auth_error_matches_common_messages():
     assert _is_tavily_auth_error(Exception("timeout")) is False
 
 
+@pytest.mark.asyncio
+async def test_async_availability_reads_saved_system_tavily_key(monkeypatch):
+    from landppt.services import db_config_service
+
+    class FakeConfigService:
+        async def is_user_override(self, user_id, key):
+            return False
+
+        async def get_config_value(self, key, user_id=None):
+            assert key == "tavily_api_key"
+            return "tvly-test-key" if user_id is None else None
+
+    monkeypatch.setattr(db_config_service, "get_db_config_service", FakeConfigService)
+    monkeypatch.setattr(drs, "get_ai_provider", lambda: object())
+    monkeypatch.setattr(drs.ai_config, "tavily_api_key", None)
+
+    service = DEEPResearchService(user_id=42)
+
+    assert await service.is_available_async() is True
+
+
+@pytest.mark.asyncio
+async def test_tavily_connection_uses_usage_endpoint_without_returning_secret(monkeypatch):
+    service = DEEPResearchService(user_id=42)
+    requests = []
+
+    async def get_key_candidates():
+        return [("system database default", "tvly-secret-test-key")]
+
+    async def get_runtime_config(source):
+        assert source == "system database default"
+        return {"base_url": "https://api.tavily.com"}
+
+    class FakeResponse:
+        status = 200
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return False
+
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return False
+
+        def get(self, url, **kwargs):
+            requests.append((url, kwargs))
+            return FakeResponse()
+
+    monkeypatch.setattr(service, "_get_tavily_api_key_candidates_async", get_key_candidates)
+    monkeypatch.setattr(service, "_get_tavily_runtime_config_async", get_runtime_config)
+    monkeypatch.setattr(drs.aiohttp, "ClientSession", FakeSession)
+
+    result = await service.test_tavily_connection()
+
+    assert result["success"] is True
+    assert requests[0][0] == "https://api.tavily.com/usage"
+    assert requests[0][1]["headers"]["Authorization"] == "Bearer tvly-secret-test-key"
+    assert "tvly-secret-test-key" not in json.dumps(result)
+
+
 class _FakeAgentProvider:
     def __init__(self, responses):
         self.responses = list(responses)
@@ -249,7 +314,7 @@ async def test_tavily_search_uses_runtime_base_url(monkeypatch):
     async def fake_candidates():
         return [("process environment", "good-key")]
 
-    async def fake_runtime_config():
+    async def fake_runtime_config(_source=None):
         return {
             "base_url": "https://gateway.example.com/tavily",
             "max_results": 7,

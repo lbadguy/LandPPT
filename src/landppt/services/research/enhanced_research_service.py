@@ -197,6 +197,20 @@ class EnhancedResearchService:
         ai_available = self.ai_provider is not None
         
         return ai_available and (tavily_available or searxng_available)
+
+    async def is_available_async(self) -> bool:
+        """Resolve research availability against saved user/system settings."""
+        if self.ai_provider is None:
+            return False
+
+        tavily_available = await self.deep_research_service.is_available_async()
+        searxng_available = self.searxng_provider.is_available()
+        provider = await self._get_research_provider_async()
+        if provider == "tavily":
+            return tavily_available
+        if provider == "searxng":
+            return searxng_available
+        return tavily_available or searxng_available
     
     def get_available_providers(self) -> List[str]:
         """Get list of available search providers"""

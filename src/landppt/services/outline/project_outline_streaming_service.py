@@ -144,7 +144,7 @@ class ProjectOutlineStreamingService:
             except Exception:
                 pass
 
-        research_runtime = self._get_preferred_outline_research_runtime()
+        research_runtime = await self._get_preferred_outline_research_runtime_async()
         research_service = research_runtime.get('service')
         provider = research_runtime.get('provider')
         is_enhanced = bool(research_runtime.get('is_enhanced'))

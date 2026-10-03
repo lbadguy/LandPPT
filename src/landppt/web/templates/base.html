@@ -744,9 +744,9 @@
 
         .app-sidebar__footer {
             display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 8px;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
             margin-top: auto;
             padding: 16px 8px 0;
             color: var(--text-secondary);
@@ -757,15 +757,16 @@
         .app-sidebar__footer-copy {
             min-width: 0;
             overflow-wrap: anywhere;
+            text-align: center;
         }
 
         .app-sidebar__footer-link {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
             flex: 0 0 auto;
             color: var(--text-secondary);
             text-decoration: none;
+            font-size: 0.95rem;
         }
 
         .app-sidebar__footer-link:hover,
@@ -1131,10 +1132,10 @@
                 </a>
             </nav>
             <div class="app-sidebar__footer">
-                <span class="app-sidebar__footer-copy">&copy; 2026 Fork From LandPPT (LC7c Personal Use)</span>
+                <span class="app-sidebar__footer-copy">&copy; 2026 Fork From LandPPT<br>(LC7c Personal Use)</span>
                 <a class="app-sidebar__footer-link" href="https://github.com/lbadguy/LandPPT" target="_blank"
-                    rel="noopener noreferrer" aria-label="GitHub repository">
-                    <i class="fab fa-github" aria-hidden="true"></i><span>GitHub</span>
+                    rel="noopener noreferrer" aria-label="GitHub repository" title="GitHub">
+                    <i class="fab fa-github" aria-hidden="true"></i>
                 </a>
             </div>
         </aside>

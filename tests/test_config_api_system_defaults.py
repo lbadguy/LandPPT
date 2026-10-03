@@ -1,5 +1,6 @@
 import asyncio
-from types import SimpleNamespace
+import sys
+from types import ModuleType, SimpleNamespace
 
 
 def test_get_system_config_will_initialize_system_defaults(monkeypatch):
@@ -64,3 +65,31 @@ def test_user_config_hides_inherited_provider_key_but_keeps_own_key(monkeypatch)
     assert "openai_api_key" not in result["config"]
     assert result["config"]["anthropic_api_key"] == "own-secret"
     assert result["config"]["openai_model"] == "deepseek-flash"
+
+
+def test_tavily_test_endpoint_uses_authenticated_user_scope(monkeypatch):
+    import landppt.api.config_api as config_api
+
+    calls = []
+
+    class FakeResearchService:
+        def __init__(self, user_id=None):
+            calls.append(user_id)
+
+        async def test_tavily_connection(self):
+            return {"success": True, "message": "Tavily 连接成功"}
+
+    fake_research_module = ModuleType("landppt.services.deep_research_service")
+    fake_research_module.DEEPResearchService = FakeResearchService
+    monkeypatch.setitem(
+        sys.modules,
+        "landppt.services.deep_research_service",
+        fake_research_module,
+    )
+
+    result = asyncio.run(
+        config_api.test_tavily_connection(user=SimpleNamespace(id=42))
+    )
+
+    assert calls == [42]
+    assert result == {"success": True, "message": "Tavily 连接成功"}
